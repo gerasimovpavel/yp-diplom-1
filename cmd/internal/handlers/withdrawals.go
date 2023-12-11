@@ -55,7 +55,6 @@ func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to read body", err), http.StatusInternalServerError)
 		return
 	}
-
 	wd, err = storage.Stor.SetWithdraw(wd)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to write withdraw", err), http.StatusInternalServerError)
