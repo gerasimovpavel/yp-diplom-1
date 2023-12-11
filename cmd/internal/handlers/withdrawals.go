@@ -49,20 +49,6 @@ func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 
-	token, _, err := jwtauth.FromContext(r.Context())
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to read token", err), http.StatusInternalServerError)
-		return
-	}
-
-	u, ok := token.Get("userId")
-	if !ok {
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-			return
-		}
-	}
-
 	wd := &model.Withdraw{}
 	err = json.Unmarshal(body, wd)
 	if err != nil {
