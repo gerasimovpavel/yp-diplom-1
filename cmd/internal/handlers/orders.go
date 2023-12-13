@@ -52,7 +52,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		UserID:     userId,
 		UploadedAt: dt}
 
-	o, err = storage.Stor.SetOrders(o)
+	o, err = storage.Stor.SetOrder(o)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to write order", err), http.StatusInternalServerError)
 		return

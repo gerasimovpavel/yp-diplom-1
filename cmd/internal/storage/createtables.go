@@ -2,10 +2,9 @@ package storage
 
 import (
 	"context"
-	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 )
 
-func createTables(w *model.PgWorker) error {
+func createTables(w *PgWorker) error {
 	//users
 	ctx := context.Background()
 	_, err := w.Exec(ctx, `

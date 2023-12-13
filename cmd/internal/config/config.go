@@ -6,9 +6,10 @@ import (
 )
 
 var Options struct {
-	RunAddress  string
-	DatabaseURI string
-	HMACSecret  string
+	RunAddress           string
+	DatabaseURI          string
+	HMACSecret           string
+	AccrualSystemAddress string
 }
 
 func ParseEnvFlags() {
@@ -17,6 +18,11 @@ func ParseEnvFlags() {
 	if !ok {
 		flag.StringVarP(&Options.HMACSecret, "s", "s", "zdgLBLCdslbvbsVJCLDcvdhlsvlshd", "HMAC secret")
 	}
+	Options.AccrualSystemAddress, ok = os.LookupEnv(`ACCRUAL_SYSTEM_ADDRESS`)
+	if !ok {
+		flag.StringVarP(&Options.AccrualSystemAddress, "r", "r", "localhost:8081", "Адрес HTTP-сервера системы начислений")
+	}
+
 	Options.DatabaseURI, ok = os.LookupEnv("DATABASE_URI")
 	if !ok {
 		flag.StringVarP(&Options.DatabaseURI, "d", "d", "", "Строка подключения к БД")

@@ -11,11 +11,11 @@ import (
 var Stor *PgStorage
 
 type PgStorage struct {
-	w *model.PgWorker
+	w *PgWorker
 }
 
 func NewPgStorage() (*PgStorage, error) {
-	worker, err := model.NewPgWorker()
+	worker, err := NewPgWorker()
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (pw *PgStorage) GetOrderByUser(userId uuid.UUID) ([]*model.Order, error) {
 	return orders, err
 }
 
-func (pw *PgStorage) SetOrders(o *model.Order) (*model.Order, error) {
+func (pw *PgStorage) SetOrder(o *model.Order) (*model.Order, error) {
 	orders := []*model.Order{}
 	sqlString := `INSERT INTO orders (number, user_id, status, uploaded_at) 
 				  VALUES ($1,$2,$3,$4) 
@@ -121,6 +121,7 @@ func (pw *PgStorage) UpdateBalance(userId uuid.UUID) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = pw.w.Exec(ctx,
 		`
 			INSERT INTO balance (user_id, accrual)
@@ -204,4 +205,16 @@ func (pw *PgStorage) GetWithdrawals(userId uuid.UUID) ([]*model.Withdraw, error)
 		return w, err
 	}
 	return w, nil
+}
+
+func (pw *PgStorage) ProcessingOrders() ([]*model.Order, error) {
+	var o []*model.Order
+	err := pw.w.Select(context.Background(),
+		&o,
+		`SELECT * FROM orders WHERE status IN ('NEW', 'PROCESSING', 'REGISTERED')`,
+	)
+	if err != nil {
+		return o, err
+	}
+	return o, nil
 }
