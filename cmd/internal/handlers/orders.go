@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ShiraazMoollatjie/goluhn"
@@ -52,7 +53,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		UserID:     userId,
 		UploadedAt: dt}
 
-	o, err = storage.Stor.SetOrder(o)
+	o, err = storage.Stor.SetOrder(context.Background(), o)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to write order", err), http.StatusInternalServerError)
 		return
@@ -94,7 +95,7 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orders, err := storage.Stor.GetOrderByUser(userId)
+	orders, err := storage.Stor.GetOrderByUser(context.Background(), userId)
 
 	if len(orders) == 0 {
 		http.Error(w, fmt.Sprintf("%s\n\nno data", err.Error()), http.StatusNoContent)

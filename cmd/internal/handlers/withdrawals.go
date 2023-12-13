@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
@@ -32,7 +33,7 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wd, err := storage.Stor.GetWithdrawals(userId)
+	wd, err := storage.Stor.GetWithdrawals(context.Background(), userId)
 	if len(wd) == 0 {
 		http.Error(w, "no records", http.StatusNoContent)
 		return
@@ -55,7 +56,7 @@ func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to read body", err), http.StatusInternalServerError)
 		return
 	}
-	wd, err = storage.Stor.SetWithdraw(wd)
+	wd, err = storage.Stor.SetWithdraw(context.Background(), wd)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to write withdraw", err), http.StatusInternalServerError)
 		return

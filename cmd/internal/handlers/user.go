@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/jwt"
@@ -36,7 +37,7 @@ func PostUserAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path == "/api/user/register" {
-		a, err = storage.Stor.CreateUser(a)
+		a, err = storage.Stor.CreateUser(context.Background(), a)
 		if err != nil {
 
 			var pgErr *pgconn.PgError
@@ -50,7 +51,7 @@ func PostUserAuth(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if r.URL.Path == "/api/user/login" {
-		a, err = storage.Stor.GetUser(a)
+		a, err = storage.Stor.GetUser(context.Background(), a)
 
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%v\n\nfailed to find user/password", err), http.StatusUnauthorized)

@@ -29,13 +29,16 @@ func NewPgStorage() (*PgStorage, error) {
 	return &PgStorage{w: worker}, nil
 }
 
-func (pw *PgStorage) CreateUser(a *model.User) (*model.User, error) {
+func (pw *PgStorage) CreateUser(ctx context.Context, a *model.User) (*model.User, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 
 	sqlString := `INSERT INTO users (user_id, login, password) VALUES ($1,$2,$3)`
 
 	userId := uuid.New()
 
-	_, err := pw.w.Exec(context.Background(), sqlString, userId.String(), a.Login, a.PasswordHash())
+	_, err := pw.w.Exec(ctx, sqlString, userId.String(), a.Login, a.PasswordHash())
 
 	if err != nil {
 		return a, err
@@ -44,11 +47,15 @@ func (pw *PgStorage) CreateUser(a *model.User) (*model.User, error) {
 	return a, nil
 }
 
-func (pw *PgStorage) GetUser(a *model.User) (*model.User, error) {
+func (pw *PgStorage) GetUser(ctx context.Context, a *model.User) (*model.User, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	users := []*model.User{}
 	sqlString := `SELECT * FROM users WHERE login=$1 AND password=$2`
 
-	err := pgxscan.Select(context.Background(), pw.w, &users, sqlString, a.Login, a.PasswordHash())
+	err := pgxscan.Select(ctx, pw.w, &users, sqlString, a.Login, a.PasswordHash())
 
 	if err != nil {
 		return a, err
@@ -56,11 +63,14 @@ func (pw *PgStorage) GetUser(a *model.User) (*model.User, error) {
 	return users[0], nil
 }
 
-func (pw *PgStorage) GetOrder(number string) (*model.Order, error) {
+func (pw *PgStorage) GetOrder(ctx context.Context, number string) (*model.Order, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	orders := []*model.Order{}
 	sqlString := `SELECT * FROM orders WHERE number=$1`
 
-	err := pgxscan.Select(context.Background(), pw.w, &orders, sqlString, number)
+	err := pw.w.Select(ctx, &orders, sqlString, number)
 
 	if err != nil {
 		return &model.Order{}, err
@@ -71,16 +81,22 @@ func (pw *PgStorage) GetOrder(number string) (*model.Order, error) {
 	return orders[0], err
 }
 
-func (pw *PgStorage) GetOrderByUser(userId uuid.UUID) ([]*model.Order, error) {
+func (pw *PgStorage) GetOrderByUser(ctx context.Context, userId uuid.UUID) ([]*model.Order, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	orders := []*model.Order{}
 	sqlString := `SELECT * FROM orders WHERE user_id=$1`
 
-	err := pw.w.Select(context.Background(), &orders, sqlString, userId)
+	err := pw.w.Select(ctx, &orders, sqlString, userId)
 
 	return orders, err
 }
 
-func (pw *PgStorage) SetOrder(o *model.Order) (*model.Order, error) {
+func (pw *PgStorage) SetOrder(ctx context.Context, o *model.Order) (*model.Order, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	orders := []*model.Order{}
 	sqlString := `INSERT INTO orders (number, user_id, status, uploaded_at) 
 				  VALUES ($1,$2,$3,$4) 
@@ -88,7 +104,7 @@ func (pw *PgStorage) SetOrder(o *model.Order) (*model.Order, error) {
 				    UPDATE SET status=excluded.status 
 				    RETURNING number, user_id, status, uploaded_at`
 
-	err := pw.w.Select(context.Background(), &orders, sqlString, o.Number, o.UserID, "NEW", o.UploadedAt)
+	err := pw.w.Select(ctx, &orders, sqlString, o.Number, o.UserID, "NEW", o.UploadedAt)
 
 	if err != nil {
 		return o, err
@@ -100,11 +116,14 @@ func (pw *PgStorage) SetOrder(o *model.Order) (*model.Order, error) {
 	return orders[0], nil
 }
 
-func (pw *PgStorage) GetBalance(userId uuid.UUID) (*model.Balance, error) {
+func (pw *PgStorage) GetBalance(ctx context.Context, userId uuid.UUID) (*model.Balance, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	balance := &model.Balance{}
 	balances := []*model.Balance{}
 
-	err := pw.w.Select(context.Background(), &balances,
+	err := pw.w.Select(ctx, &balances,
 		`
 			SELECT accruals, withdraw FROM balance user_id=$1)
 		`,
@@ -115,9 +134,12 @@ func (pw *PgStorage) GetBalance(userId uuid.UUID) (*model.Balance, error) {
 	return balance, nil
 }
 
-func (pw *PgStorage) UpdateBalance(userId uuid.UUID) error {
-	ctx := context.Background()
-	err := pw.w.Begin(ctx)
+func (pw *PgStorage) UpdateBalance(ctx context.Context, userId uuid.UUID) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	_, err := pw.w.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -162,12 +184,16 @@ func (pw *PgStorage) UpdateBalance(userId uuid.UUID) error {
 	return nil
 }
 
-func (pw *PgStorage) SetWithdraw(w *model.Withdraw) (*model.Withdraw, error) {
-	ctx := context.Background()
+func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model.Withdraw, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 
-	pw.w.Begin(ctx)
-
-	o, err := pw.GetOrder(w.Order)
+	ctx, err := pw.w.Begin(ctx)
+	if err != nil {
+		return w, err
+	}
+	o, err := pw.GetOrder(ctx, w.Order)
 	if err != nil {
 		pw.w.Rollback(ctx)
 		return w, err
@@ -183,7 +209,7 @@ func (pw *PgStorage) SetWithdraw(w *model.Withdraw) (*model.Withdraw, error) {
 	}
 	w.ProcessedAt = t
 
-	err = pw.UpdateBalance(o.UserID)
+	err = pw.UpdateBalance(ctx, o.UserID)
 
 	if err != nil {
 		pw.w.Rollback(ctx)
@@ -195,9 +221,12 @@ func (pw *PgStorage) SetWithdraw(w *model.Withdraw) (*model.Withdraw, error) {
 	return w, nil
 }
 
-func (pw *PgStorage) GetWithdrawals(userId uuid.UUID) ([]*model.Withdraw, error) {
+func (pw *PgStorage) GetWithdrawals(ctx context.Context, userId uuid.UUID) ([]*model.Withdraw, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	var w []*model.Withdraw
-	err := pw.w.Select(context.Background(),
+	err := pw.w.Select(ctx,
 		&w,
 		`SELECT * FROM withdrawals WHERE user_id=$1`,
 		userId)
@@ -207,9 +236,12 @@ func (pw *PgStorage) GetWithdrawals(userId uuid.UUID) ([]*model.Withdraw, error)
 	return w, nil
 }
 
-func (pw *PgStorage) ProcessingOrders() ([]*model.Order, error) {
+func (pw *PgStorage) ProcessingOrders(ctx context.Context) ([]*model.Order, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	var o []*model.Order
-	err := pw.w.Select(context.Background(),
+	err := pw.w.Select(ctx,
 		&o,
 		`SELECT * FROM orders WHERE status IN ('NEW', 'PROCESSING', 'REGISTERED')`,
 	)

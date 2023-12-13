@@ -4,9 +4,11 @@ import (
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/config"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/handlers"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/jwt"
+	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/logger"
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
+	"moul.io/chizap"
 )
 
 var tokenAuth *jwtauth.JWTAuth
@@ -16,11 +18,10 @@ func MainRouter() chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(
-		//chizap.New(logger.Logger, &chizap.Opts{
-		//	WithReferer:   true,
-		//	WithUserAgent: true,
-		//}),
-		chimw.Logger,
+		chizap.New(logger.Logger, &chizap.Opts{
+			WithReferer:   true,
+			WithUserAgent: true,
+		}),
 		chimw.Compress(5),
 	)
 	r.Route("/", func(r chi.Router) {

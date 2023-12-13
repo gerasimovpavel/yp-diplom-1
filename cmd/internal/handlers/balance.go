@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
@@ -31,7 +32,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	balance, err := storage.Stor.GetBalance(userId)
+	balance, err := storage.Stor.GetBalance(context.Background(), userId)
 
 	body, err := json.Marshal(balance)
 

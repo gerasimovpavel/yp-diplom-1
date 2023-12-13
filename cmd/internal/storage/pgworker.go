@@ -2,8 +2,10 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/config"
+	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/logger"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -32,7 +34,11 @@ func NewPgWorker() (*PgWorker, error) {
 
 func (w *PgWorker) Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error) {
 	if ctx.Value("tx") != nil {
-		return ctx.Value("tx").(*pgxpool.Tx).Exec(ctx, sql, arguments...)
+		tx, ok := ctx.Value("tx").(*pgxpool.Tx)
+		if !ok {
+			panic(errors.New("not ok"))
+		}
+		return tx.Exec(ctx, sql, arguments...)
 	}
 	return w.pool.Exec(ctx, sql, arguments...)
 }
@@ -52,20 +58,23 @@ func (w *PgWorker) QueryRow(ctx context.Context, sql string, args ...interface{}
 }
 func (w *PgWorker) Select(ctx context.Context, dst interface{}, query string, args ...interface{}) error {
 	if ctx.Value("tx") != nil {
-		return pgxscan.Select(ctx, ctx.Value("tx").(*pgxpool.Tx), dst, query, args...)
+		tx, ok := ctx.Value("tx").(*pgxpool.Tx)
+		if !ok {
+			panic(errors.New("not ok"))
+		}
+		return pgxscan.Select(ctx, tx, dst, query, args...)
 	}
 	return pgxscan.Select(ctx, w.pool, dst, query, args...)
 }
 
-func (w *PgWorker) Begin(ctx context.Context) error {
-	if ctx.Value("tx") == nil {
-		t, err := w.pool.Begin(ctx)
-		if err != nil {
-			return err
-		}
-		ctx = context.WithValue(ctx, "tx", &t)
+func (w *PgWorker) Begin(ctx context.Context) (context.Context, error) {
+	var err error
+	t, err := w.pool.Begin(ctx)
+	if err != nil {
+		logger.Logger.Sugar().Errorln(err)
+		return ctx, err
 	}
-	return nil
+	return context.WithValue(ctx, "tx", t.(*pgxpool.Tx)), nil
 }
 
 func (w *PgWorker) Rollback(ctx context.Context) error {
@@ -73,6 +82,7 @@ func (w *PgWorker) Rollback(ctx context.Context) error {
 	if t != nil {
 		err := t.Rollback(ctx)
 		if err != nil {
+			logger.Logger.Sugar().Errorln(err)
 			return err
 		}
 	}
@@ -84,6 +94,7 @@ func (w *PgWorker) Commit(ctx context.Context) error {
 	if t != nil {
 		err := t.Commit(ctx)
 		if err != nil {
+			logger.Logger.Sugar().Errorln(err)
 			return err
 		}
 	}

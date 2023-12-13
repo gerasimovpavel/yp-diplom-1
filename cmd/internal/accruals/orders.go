@@ -12,7 +12,8 @@ import (
 )
 
 func CheckAccruals() {
-	orders, err := storage.Stor.ProcessingOrders()
+	ctx := context.Background()
+	orders, err := storage.Stor.ProcessingOrders(ctx)
 	if err != nil {
 		logger.Logger.Sugar().Error(err)
 		return
@@ -31,7 +32,7 @@ func CheckAccruals() {
 				SetContext(context.Background()).
 				SetResult(&order).SetBody(body)
 
-			resp, err := req.Get(fmt.Sprintf("http://%s/api/orders/%s", config.Options.AccrualSystemAddress, o.Number))
+			resp, err := req.Get(fmt.Sprintf("%s/api/orders/%s", config.Options.AccrualSystemAddress, o.Number))
 
 			if err != nil {
 				logger.Logger.Sugar().Error(err)
@@ -42,7 +43,7 @@ func CheckAccruals() {
 				return
 			}
 			if order.Number == o.Number && order.Status != o.Status {
-				_, err = storage.Stor.SetOrder(&order)
+				_, err = storage.Stor.SetOrder(ctx, &order)
 				if err != nil {
 					logger.Logger.Sugar().Error(err)
 					return
