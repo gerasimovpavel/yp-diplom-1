@@ -15,7 +15,7 @@ func ParseEnvFlags() {
 	var ok bool
 	Options.HMACSecret, ok = os.LookupEnv("HMAC_SECRET")
 	if !ok {
-		flag.StringVarP(&Options.HMACSecret, "s", "s", "", "HMAC secret")
+		flag.StringVarP(&Options.HMACSecret, "s", "s", "zdgLBLCdslbvbsVJCLDcvdhlsvlshd", "HMAC secret")
 	}
 	Options.DatabaseURI, ok = os.LookupEnv("DATABASE_URI")
 	if !ok {

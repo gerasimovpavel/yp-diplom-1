@@ -13,7 +13,7 @@ import (
 func CreateToken(user *model.User) (string, error) {
 	tok, err := jwt.NewBuilder().
 		Issuer("yp.diplom-1").
-		Claim("login", user.Login).
+		Claim("userId", user.UserID).
 		Expiration(time.Now().Add(24 * time.Hour)).
 		Build()
 

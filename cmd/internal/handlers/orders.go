@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"io"
 	"net/http"
+	"time"
 )
 
 func PostOrders(w http.ResponseWriter, r *http.Request) {
@@ -45,23 +46,28 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
 		return
 	}
-
+	dt := time.Now()
 	o := &model.Order{
-		Number: string(body),
-		UserID: userId}
+		Number:     string(body),
+		UserID:     userId,
+		UploadedAt: dt}
 
 	o, err = storage.Stor.SetOrders(o)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to write order", err), http.StatusInternalServerError)
 		return
 	}
-	if !o.LoadedAt.IsZero() {
+
+	if !o.UploadedAt.IsZero() {
 		if userId != o.UserID {
 			http.Error(w, "order added by another user", http.StatusConflict)
 			return
 		}
-		http.Error(w, "order already exist", http.StatusOK)
-		return
+
+		if !dt.Equal(o.UploadedAt) {
+			http.Error(w, "order already exist", http.StatusOK)
+			return
+		}
 	}
 	w.WriteHeader(http.StatusAccepted)
 }

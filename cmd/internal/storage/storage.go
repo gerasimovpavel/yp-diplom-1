@@ -88,7 +88,7 @@ func (pw *PgStorage) SetOrders(o *model.Order) (*model.Order, error) {
 				    UPDATE SET status=excluded.status 
 				    RETURNING number, user_id, status, uploaded_at`
 
-	err := pw.w.Select(context.Background(), &orders, sqlString, o.Number, o.UserID, "NEW", time.Now())
+	err := pw.w.Select(context.Background(), &orders, sqlString, o.Number, o.UserID, "NEW", o.UploadedAt)
 
 	if err != nil {
 		return o, err
