@@ -83,7 +83,7 @@ func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to deserialize body", err), http.StatusInternalServerError)
 		return
 	}
-	wd.UserId = userID
+	wd.UserID = userID
 	_, err = storage.Stor.SetWithdraw(context.Background(), wd)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to write withdraw", err), http.StatusInternalServerError)
