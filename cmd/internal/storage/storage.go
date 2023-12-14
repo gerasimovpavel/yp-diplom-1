@@ -242,7 +242,6 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 		return w, err
 	}
 	w.ProcessedAt = t
-
 	err = pw.UpdateBalance(ctx, w.UserID)
 
 	if err != nil {
