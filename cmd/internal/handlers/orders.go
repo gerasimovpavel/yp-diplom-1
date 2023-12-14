@@ -98,7 +98,7 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 	orders, err := storage.Stor.GetOrderByUser(context.Background(), userId)
 
 	if len(orders) == 0 {
-		http.Error(w, fmt.Sprintf("%s\n\nno data", err.Error()), http.StatusNoContent)
+		http.Error(w, "", http.StatusNoContent)
 		return
 	}
 

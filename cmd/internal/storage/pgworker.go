@@ -68,13 +68,15 @@ func (w *PgWorker) Select(ctx context.Context, dst interface{}, query string, ar
 }
 
 func (w *PgWorker) Begin(ctx context.Context) (context.Context, error) {
-	var err error
-	t, err := w.pool.Begin(ctx)
-	if err != nil {
-		logger.Logger.Sugar().Errorln(err)
-		return ctx, err
+	if ctx.Value("tx") == nil {
+		t, err := w.pool.Begin(ctx)
+		if err != nil {
+			logger.Logger.Sugar().Errorln(err)
+			return ctx, err
+		}
+		return context.WithValue(ctx, "tx", t.(*pgxpool.Tx)), nil
 	}
-	return context.WithValue(ctx, "tx", t.(*pgxpool.Tx)), nil
+	return ctx, nil
 }
 
 func (w *PgWorker) Rollback(ctx context.Context) error {
