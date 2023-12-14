@@ -40,7 +40,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := uuid.Parse(u.(string))
+	userID, err := uuid.Parse(u.(string))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
 		return
@@ -48,7 +48,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 	dt := time.Now()
 	o := &model.Order{
 		Number:     string(body),
-		UserID:     userId,
+		UserID:     userID,
 		UploadedAt: dt}
 
 	o, err = storage.Stor.SetOrder(context.Background(), o)
@@ -58,7 +58,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !o.UploadedAt.IsZero() {
-		if userId != o.UserID {
+		if userID != o.UserID {
 			http.Error(w, "order added by another user", http.StatusConflict)
 			return
 		}

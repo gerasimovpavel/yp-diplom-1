@@ -11,6 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type ContextKey string
+
 type PgWorker struct {
 	pool *pgxpool.Pool
 }
@@ -33,8 +35,8 @@ func NewPgWorker() (*PgWorker, error) {
 }
 
 func (w *PgWorker) Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error) {
-	if ctx.Value("tr") != nil {
-		tx, ok := ctx.Value("tr").(*pgxpool.Tx)
+	if ctx.Value(ContextKey("tx")) != nil {
+		tx, ok := ctx.Value(ContextKey("tx")).(*pgxpool.Tx)
 		if !ok {
 			panic(errors.New("not ok"))
 		}
@@ -44,21 +46,21 @@ func (w *PgWorker) Exec(ctx context.Context, sql string, arguments ...interface{
 }
 
 func (w *PgWorker) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-	if ctx.Value("tr") != nil {
-		return ctx.Value("tr").(*pgxpool.Tx).Query(ctx, sql, args...)
+	if ctx.Value(ContextKey("tx")) != nil {
+		return ctx.Value(ContextKey("tx")).(*pgxpool.Tx).Query(ctx, sql, args...)
 	}
 	return w.pool.Query(ctx, sql, args...)
 }
 
 func (w *PgWorker) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	if ctx.Value("tr") != nil {
-		return ctx.Value("tr").(*pgxpool.Tx).QueryRow(ctx, sql, args...)
+	if ctx.Value(ContextKey("tx")) != nil {
+		return ctx.Value(ContextKey("tx")).(*pgxpool.Tx).QueryRow(ctx, sql, args...)
 	}
 	return w.pool.QueryRow(ctx, sql, args...)
 }
 func (w *PgWorker) Select(ctx context.Context, dst interface{}, query string, args ...interface{}) error {
-	if ctx.Value("tr") != nil {
-		tx, ok := ctx.Value("tr").(*pgxpool.Tx)
+	if ctx.Value(ContextKey("tx")) != nil {
+		tx, ok := ctx.Value(ContextKey("tx")).(*pgxpool.Tx)
 		if !ok {
 			panic(errors.New("not ok"))
 		}
@@ -68,20 +70,20 @@ func (w *PgWorker) Select(ctx context.Context, dst interface{}, query string, ar
 }
 
 func (w *PgWorker) Begin(ctx context.Context) (context.Context, error) {
-	if ctx.Value("tr") == nil {
+	if ctx.Value(ContextKey("tx")) == nil {
 		t, err := w.pool.Begin(ctx)
 		if err != nil {
 			logger.Logger.Sugar().Errorln(err)
 			return ctx, err
 		}
-		ctx = context.WithValue(ctx, "tr", t.(*pgxpool.Tx))
+		ctx = context.WithValue(ctx, ContextKey("tx"), t.(*pgxpool.Tx))
 		return ctx, nil
 	}
 	return ctx, nil
 }
 
 func (w *PgWorker) Rollback(ctx context.Context) error {
-	t := ctx.Value("tr").(*pgxpool.Tx)
+	t := ctx.Value(ContextKey("tx")).(*pgxpool.Tx)
 	if t != nil {
 		err := t.Rollback(ctx)
 		if err != nil {
@@ -93,7 +95,7 @@ func (w *PgWorker) Rollback(ctx context.Context) error {
 }
 
 func (w *PgWorker) Commit(ctx context.Context) error {
-	t := ctx.Value("tr").(*pgxpool.Tx)
+	t := ctx.Value(ContextKey("tx")).(*pgxpool.Tx)
 	if t != nil {
 		err := t.Commit(ctx)
 		if err != nil {
