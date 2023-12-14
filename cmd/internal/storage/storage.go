@@ -235,7 +235,7 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 	t := time.Now()
 	_, err = pw.w.Exec(ctx,
 		`INSERT INTO withdrawals ("order", summa, processed_at, user_id) VALUES ($1, $2, $3, $4)`,
-		w.Order, w.Sum, t, w.UserId,
+		w.Order, w.Sum, t, w.UserID,
 	)
 	if err != nil {
 		pw.w.Rollback(ctx)
@@ -243,7 +243,7 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 	}
 	w.ProcessedAt = t
 
-	err = pw.UpdateBalance(ctx, w.UserId)
+	err = pw.UpdateBalance(ctx, w.UserID)
 
 	if err != nil {
 		if allowCommit {
