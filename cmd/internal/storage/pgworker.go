@@ -74,7 +74,8 @@ func (w *PgWorker) Begin(ctx context.Context) (context.Context, error) {
 			logger.Logger.Sugar().Errorln(err)
 			return ctx, err
 		}
-		return context.WithValue(ctx, "tr", t.(*pgxpool.Tx)), nil
+		ctx = context.WithValue(ctx, "tr", t.(*pgxpool.Tx))
+		return ctx, nil
 	}
 	return ctx, nil
 }

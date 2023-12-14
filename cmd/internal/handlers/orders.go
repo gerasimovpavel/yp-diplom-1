@@ -92,6 +92,10 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orders, err := storage.Stor.GetOrderByUser(context.Background(), userID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to get order", err), http.StatusInternalServerError)
+		return
+	}
 
 	if len(orders) == 0 {
 		http.Error(w, "", http.StatusNoContent)

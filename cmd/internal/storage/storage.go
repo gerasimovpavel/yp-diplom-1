@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/google/uuid"
@@ -89,8 +91,10 @@ func (pw *PgStorage) GetOrderByUser(ctx context.Context, userID uuid.UUID) ([]*m
 	sqlString := `SELECT * FROM orders WHERE user_id=$1`
 
 	err := pw.w.Select(ctx, &orders, sqlString, userID)
-
-	return orders, err
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return orders, err
+	}
+	return orders, nil
 }
 
 func (pw *PgStorage) SetOrder(ctx context.Context, o *model.Order) (*model.Order, error) {
@@ -249,7 +253,7 @@ func (pw *PgStorage) GetWithdrawals(ctx context.Context, userID uuid.UUID) ([]*m
 		&w,
 		`SELECT * FROM withdrawals WHERE user_id=$1`,
 		userID)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return w, err
 	}
 	return w, nil

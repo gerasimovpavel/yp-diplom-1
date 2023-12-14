@@ -32,6 +32,10 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wd, err := storage.Stor.GetWithdrawals(context.Background(), userId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to get withdrawals", err), http.StatusInternalServerError)
+		return
+	}
 	if len(wd) == 0 {
 		http.Error(w, "no records", http.StatusNoContent)
 		return
@@ -50,12 +54,16 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 
 func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to read body", err), http.StatusInternalServerError)
+		return
+	}
 	defer r.Body.Close()
 
 	wd := &model.Withdraw{}
 	err = json.Unmarshal(body, wd)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to read body", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to deserialize body", err), http.StatusInternalServerError)
 		return
 	}
 	wd, err = storage.Stor.SetWithdraw(context.Background(), wd)
