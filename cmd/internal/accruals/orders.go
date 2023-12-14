@@ -21,7 +21,7 @@ func CheckAccruals() {
 	wg := sync.WaitGroup{}
 	for _, o := range orders {
 		wg.Add(1)
-		go func() {
+		go func(ord *model.Order) {
 			var order model.Order
 			var body string
 
@@ -32,7 +32,7 @@ func CheckAccruals() {
 				SetContext(context.Background()).
 				SetResult(&order).SetBody(body)
 
-			resp, err := req.Get(fmt.Sprintf("%s/api/orders/%s", config.Options.AccrualSystemAddress, o.Number))
+			resp, err := req.Get(fmt.Sprintf("%s/api/orders/%s", config.Options.AccrualSystemAddress, ord.Number))
 
 			if err != nil {
 				logger.Logger.Sugar().Error(err)
@@ -42,14 +42,14 @@ func CheckAccruals() {
 				logger.Logger.Warn(fmt.Sprintf("status: %d body: %s", resp.StatusCode(), body))
 				return
 			}
-			if order.Number == o.Number && order.Status != o.Status {
+			if order.Number == ord.Number && order.Status != ord.Status {
 				_, err = storage.Stor.SetOrder(ctx, &order)
 				if err != nil {
 					logger.Logger.Sugar().Error(err)
 					return
 				}
 			}
-		}()
+		}(o)
 
 	}
 	wg.Wait()

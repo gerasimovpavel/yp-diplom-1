@@ -36,14 +36,14 @@ func (pw *PgStorage) CreateUser(ctx context.Context, a *model.User) (*model.User
 
 	sqlString := `INSERT INTO users (user_id, login, password) VALUES ($1,$2,$3)`
 
-	userId := uuid.New()
+	userID := uuid.New()
 
-	_, err := pw.w.Exec(ctx, sqlString, userId.String(), a.Login, a.PasswordHash())
+	_, err := pw.w.Exec(ctx, sqlString, userID.String(), a.Login, a.PasswordHash())
 
 	if err != nil {
 		return a, err
 	}
-	a.UserID = userId.String()
+	a.UserID = userID.String()
 	return a, nil
 }
 
@@ -134,7 +134,7 @@ func (pw *PgStorage) GetBalance(ctx context.Context, userId uuid.UUID) (*model.B
 	return balance, nil
 }
 
-func (pw *PgStorage) UpdateBalance(ctx context.Context, userId uuid.UUID) error {
+func (pw *PgStorage) UpdateBalance(ctx context.Context, userID uuid.UUID) error {
 	var err error
 
 	if ctx == nil {
@@ -161,7 +161,7 @@ func (pw *PgStorage) UpdateBalance(ctx context.Context, userId uuid.UUID) error 
 				GROUP BY o.user_id
 			ON CONFLICT (user_id) DO UPDATE SET accrual = excluded.accrual	
 		`,
-		userId)
+		userID)
 	if err != nil {
 		pw.w.Rollback(ctx)
 		return err
@@ -178,7 +178,7 @@ func (pw *PgStorage) UpdateBalance(ctx context.Context, userId uuid.UUID) error 
 				GROUP BY o.user_id
 			ON CONFLICT (user_id) DO UPDATE SET accrual = excluded.accrual	
 		`,
-		userId)
+		userID)
 
 	if err != nil {
 		if allowCommit {
