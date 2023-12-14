@@ -36,10 +36,8 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 
 	u, ok := token.Get("userId")
 	if !ok {
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-			return
-		}
+		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+		return
 	}
 
 	userId, err := uuid.Parse(u.(string))
@@ -83,19 +81,17 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 
 	u, ok := token.Get("userId")
 	if !ok {
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-			return
-		}
+		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+		return
 	}
 
-	userId, err := uuid.Parse(u.(string))
+	userID, err := uuid.Parse(u.(string))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
 		return
 	}
 
-	orders, err := storage.Stor.GetOrderByUser(context.Background(), userId)
+	orders, err := storage.Stor.GetOrderByUser(context.Background(), userID)
 
 	if len(orders) == 0 {
 		http.Error(w, "", http.StatusNoContent)

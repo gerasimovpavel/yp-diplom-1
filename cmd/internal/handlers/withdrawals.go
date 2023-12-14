@@ -21,10 +21,8 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 
 	u, ok := token.Get("userId")
 	if !ok {
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-			return
-		}
+		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+		return
 	}
 
 	userId, err := uuid.Parse(u.(string))
@@ -40,6 +38,10 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body, err := json.Marshal(wd)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to serialize withdraw", err), http.StatusUnauthorized)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

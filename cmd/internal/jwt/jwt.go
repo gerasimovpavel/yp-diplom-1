@@ -16,7 +16,9 @@ func CreateToken(user *model.User) (string, error) {
 		Claim("userId", user.UserID).
 		Expiration(time.Now().Add(24 * time.Hour)).
 		Build()
-
+	if err != nil {
+		return "", err
+	}
 	signed, err := jwt.Sign(tok, jwt.WithKey(jwa.HS512, []byte(config.Options.HMACSecret)))
 	if err != nil {
 		return "", err
@@ -30,12 +32,12 @@ func Authenticator(next http.Handler) http.Handler {
 		token, _, err := jwtauth.FromContext(r.Context())
 
 		if err != nil {
-			http.Error(w, err.Error(), 401)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
 		if token == nil || jwt.Validate(token) != nil {
-			http.Error(w, http.StatusText(401), 401)
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 
