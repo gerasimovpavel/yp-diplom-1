@@ -25,13 +25,13 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := uuid.Parse(u.(string))
+	userID, err := uuid.Parse(u.(string))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
 		return
 	}
 
-	wd, err := storage.Stor.GetWithdrawals(context.Background(), userId)
+	wd, err := storage.Stor.GetWithdrawals(context.Background(), userID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to get withdrawals", err), http.StatusInternalServerError)
 		return
