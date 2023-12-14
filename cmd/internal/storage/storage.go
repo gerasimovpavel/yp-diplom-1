@@ -81,14 +81,14 @@ func (pw *PgStorage) GetOrder(ctx context.Context, number string) (*model.Order,
 	return orders[0], err
 }
 
-func (pw *PgStorage) GetOrderByUser(ctx context.Context, userId uuid.UUID) ([]*model.Order, error) {
+func (pw *PgStorage) GetOrderByUser(ctx context.Context, userID uuid.UUID) ([]*model.Order, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	orders := []*model.Order{}
 	sqlString := `SELECT * FROM orders WHERE user_id=$1`
 
-	err := pw.w.Select(ctx, &orders, sqlString, userId)
+	err := pw.w.Select(ctx, &orders, sqlString, userID)
 
 	return orders, err
 }
@@ -116,7 +116,7 @@ func (pw *PgStorage) SetOrder(ctx context.Context, o *model.Order) (*model.Order
 	return orders[0], nil
 }
 
-func (pw *PgStorage) GetBalance(ctx context.Context, userId uuid.UUID) (*model.Balance, error) {
+func (pw *PgStorage) GetBalance(ctx context.Context, userID uuid.UUID) (*model.Balance, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -127,7 +127,7 @@ func (pw *PgStorage) GetBalance(ctx context.Context, userId uuid.UUID) (*model.B
 		`
 			SELECT accruals, withdraw FROM balance user_id=$1)
 		`,
-		userId)
+		userID)
 	if err != nil {
 		return balance, err
 	}
@@ -240,7 +240,7 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 	return w, nil
 }
 
-func (pw *PgStorage) GetWithdrawals(ctx context.Context, userId uuid.UUID) ([]*model.Withdraw, error) {
+func (pw *PgStorage) GetWithdrawals(ctx context.Context, userID uuid.UUID) ([]*model.Withdraw, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -248,7 +248,7 @@ func (pw *PgStorage) GetWithdrawals(ctx context.Context, userId uuid.UUID) ([]*m
 	err := pw.w.Select(ctx,
 		&w,
 		`SELECT * FROM withdrawals WHERE user_id=$1`,
-		userId)
+		userID)
 	if err != nil {
 		return w, err
 	}
