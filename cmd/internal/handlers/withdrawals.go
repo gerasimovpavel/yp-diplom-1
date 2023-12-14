@@ -60,12 +60,30 @@ func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	token, _, err := jwtauth.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to read token", err), http.StatusInternalServerError)
+		return
+	}
+	u, ok := token.Get("userId")
+	if !ok {
+		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := uuid.Parse(u.(string))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+		return
+	}
+
 	wd := &model.Withdraw{}
 	err = json.Unmarshal(body, wd)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to deserialize body", err), http.StatusInternalServerError)
 		return
 	}
+	wd.UserId = userID
 	_, err = storage.Stor.SetWithdraw(context.Background(), wd)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to write withdraw", err), http.StatusInternalServerError)

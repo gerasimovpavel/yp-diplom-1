@@ -31,15 +31,43 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	}
 	balance, err := storage.Stor.GetBalance(context.Background(), userID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to get balance", err), http.StatusUnauthorized)
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to get balance", err), http.StatusInternalServerError)
 		return
 	}
 	body, err := json.Marshal(balance)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to serialize balance", err), http.StatusUnauthorized)
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to serialize balance", err), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	io.WriteString(w, string(body))
+}
+
+func UpdateBalance(w http.ResponseWriter, r *http.Request) {
+	token, _, err := jwtauth.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to read token", err), http.StatusInternalServerError)
+		return
+	}
+
+	u, ok := token.Get("userId")
+	if !ok {
+		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := uuid.Parse(u.(string))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+		return
+	}
+	err = storage.Stor.UpdateBalance(context.Background(), userID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to get balance", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }

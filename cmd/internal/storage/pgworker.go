@@ -90,6 +90,7 @@ func (w *PgWorker) Rollback(ctx context.Context) error {
 			logger.Logger.Sugar().Errorln(err)
 			return err
 		}
+		ctx = context.WithValue(ctx, ContextKey("tx"), nil)
 	}
 	return nil
 }
@@ -102,6 +103,7 @@ func (w *PgWorker) Commit(ctx context.Context) error {
 			logger.Logger.Sugar().Errorln(err)
 			return err
 		}
+		ctx = context.WithValue(ctx, ContextKey("tx"), nil)
 	}
 	return nil
 }

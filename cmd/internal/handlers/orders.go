@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ShiraazMoollatjie/goluhn"
+	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/accruals"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
 	"github.com/go-chi/jwtauth/v5"
@@ -49,6 +50,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 	o := &model.Order{
 		Number:     string(body),
 		UserID:     userID,
+		Status:     "NEW",
 		UploadedAt: dt}
 
 	o, err = storage.Stor.SetOrder(context.Background(), o)
@@ -107,6 +109,8 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%s\n\nне могу сериализовать в json", err.Error()), http.StatusInternalServerError)
 		return
 	}
+
+	accruals.CheckAccruals(userID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

@@ -10,5 +10,5 @@ type Order struct {
 	UserID     uuid.UUID `json:"-" db:"user_id"`
 	UploadedAt time.Time `json:"uploaded_at" db:"uploaded_at"`
 	Status     string    `json:"status" db:"status"`
-	Accrual    float64   `json:"accrual,omitempty" db:"accrual"`
+	Accrual    float32   `json:"accrual,omitempty" db:"accrual"`
 }

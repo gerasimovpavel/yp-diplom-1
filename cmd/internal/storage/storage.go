@@ -102,14 +102,13 @@ func (pw *PgStorage) SetOrder(ctx context.Context, o *model.Order) (*model.Order
 		ctx = context.Background()
 	}
 	orders := []*model.Order{}
-	sqlString := `INSERT INTO orders (number, user_id, status, uploaded_at) 
-				  VALUES ($1,$2,$3,$4) 
+	sqlString := `INSERT INTO orders (number, user_id, status, uploaded_at, accrual) 
+				  VALUES ($1,$2,$3,$4,$5) 
 				  ON CONFLICT (number) DO 
-				    UPDATE SET status=excluded.status 
+				    UPDATE SET status=excluded.status, accrual = excluded.accrual
 				    RETURNING number, user_id, status, uploaded_at`
 
-	err := pw.w.Select(ctx, &orders, sqlString, o.Number, o.UserID, "NEW", o.UploadedAt)
-
+	err := pw.w.Select(ctx, &orders, sqlString, o.Number, o.UserID, o.Status, o.UploadedAt, o.Accrual)
 	if err != nil {
 		return o, err
 	}
@@ -129,13 +128,16 @@ func (pw *PgStorage) GetBalance(ctx context.Context, userID uuid.UUID) (*model.B
 
 	err := pw.w.Select(ctx, &balances,
 		`
-			SELECT accruals, withdraw FROM balance user_id=$1)
+			SELECT current, accrual, withdraw FROM balance WHERE user_id=$1
 		`,
 		userID)
 	if err != nil {
 		return balance, err
 	}
-	return balance, nil
+	if len(balances) == 0 {
+		return balance, nil
+	}
+	return balances[0], nil
 }
 
 func (pw *PgStorage) UpdateBalance(ctx context.Context, userID uuid.UUID) error {
@@ -145,9 +147,9 @@ func (pw *PgStorage) UpdateBalance(ctx context.Context, userID uuid.UUID) error 
 		ctx = context.Background()
 	}
 
-	allowCommit := true
-	if ctx.Value("tx") == nil {
-		allowCommit = false
+	allowCommit := false
+	if ctx.Value(ContextKey("tx")) == nil {
+		allowCommit = true
 		ctx, err = pw.w.Begin(ctx)
 		if err != nil {
 			return err
@@ -156,12 +158,12 @@ func (pw *PgStorage) UpdateBalance(ctx context.Context, userID uuid.UUID) error 
 
 	_, err = pw.w.Exec(ctx,
 		`
-			INSERT INTO balance (user_id, accrual)
+			INSERT INTO balance (user_id, accrual, withdraw)
 				SELECT  o.user_id,
-						SUM(a.summa) AS accrual
-				FROM accruals a
-				INNER JOIN orders O ON a.order = o.number
-				WHERE o.user_id=$1
+						coalesce(SUM(o.accrual),0.00) AS accrual,
+						0.0 AS withdraw
+				FROM  orders O 
+				WHERE o.user_id=$1 AND o.status = 'PROCESSED'
 				GROUP BY o.user_id
 			ON CONFLICT (user_id) DO UPDATE SET accrual = excluded.accrual	
 		`,
@@ -173,14 +175,14 @@ func (pw *PgStorage) UpdateBalance(ctx context.Context, userID uuid.UUID) error 
 
 	_, err = pw.w.Exec(ctx,
 		`
-			INSERT INTO balance (user_id, accrual)
+			INSERT INTO balance (user_id, accrual, withdraw)
 				SELECT  o.user_id,
-						SUM(a.summa) AS withdraw
-				FROM withdrawals a
-				INNER JOIN orders O ON a.order = o.number
+				        0.0 AS accrual,
+						coalesce(SUM(o.summa),0.00) AS withdraw
+				FROM withdrawals o
 				WHERE o.user_id=$1
 				GROUP BY o.user_id
-			ON CONFLICT (user_id) DO UPDATE SET accrual = excluded.accrual	
+			ON CONFLICT (user_id) DO UPDATE SET withdraw = excluded.withdraw	
 		`,
 		userID)
 
@@ -190,6 +192,18 @@ func (pw *PgStorage) UpdateBalance(ctx context.Context, userID uuid.UUID) error 
 		}
 		return err
 	}
+
+	_, err = pw.w.Exec(ctx,
+		`UPDATE balance SET current = accrual - withdraw WHERE user_id=$1`,
+		userID)
+
+	if err != nil {
+		if allowCommit {
+			pw.w.Rollback(ctx)
+		}
+		return err
+	}
+
 	if allowCommit {
 		pw.w.Commit(ctx)
 	}
@@ -202,16 +216,16 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 		ctx = context.Background()
 	}
 
-	allowCommit := true
-	if ctx.Value("tx") == nil {
-		allowCommit = false
+	allowCommit := false
+	if ctx.Value(ContextKey("tx")) == nil {
+		allowCommit = true
 		ctx, err = pw.w.Begin(ctx)
 		if err != nil {
 			return w, err
 		}
 	}
 
-	o, err := pw.GetOrder(ctx, w.Order)
+	_, err = pw.GetOrder(ctx, w.Order)
 	if err != nil {
 		if allowCommit {
 			pw.w.Rollback(ctx)
@@ -220,8 +234,8 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 	}
 	t := time.Now()
 	_, err = pw.w.Exec(ctx,
-		`INSERT INTO withdrawals ("order", summa, processed_at) VALUES ($1, $2, $3)`,
-		w.Order, w.Sum, t,
+		`INSERT INTO withdrawals ("order", summa, processed_at, user_id) VALUES ($1, $2, $3, $4)`,
+		w.Order, w.Sum, t, w.UserId,
 	)
 	if err != nil {
 		pw.w.Rollback(ctx)
@@ -229,7 +243,7 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 	}
 	w.ProcessedAt = t
 
-	err = pw.UpdateBalance(ctx, o.UserID)
+	err = pw.UpdateBalance(ctx, w.UserId)
 
 	if err != nil {
 		if allowCommit {
@@ -251,7 +265,7 @@ func (pw *PgStorage) GetWithdrawals(ctx context.Context, userID uuid.UUID) ([]*m
 	var w []*model.Withdraw
 	err := pw.w.Select(ctx,
 		&w,
-		`SELECT * FROM withdrawals WHERE user_id=$1`,
+		`SELECT * FROM withdrawals  WHERE user_id=$1 ORDER BY processed_at`,
 		userID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return w, err
@@ -259,15 +273,15 @@ func (pw *PgStorage) GetWithdrawals(ctx context.Context, userID uuid.UUID) ([]*m
 	return w, nil
 }
 
-func (pw *PgStorage) ProcessingOrders(ctx context.Context) ([]*model.Order, error) {
+func (pw *PgStorage) ProcessingOrders(ctx context.Context, userID uuid.UUID) ([]*model.Order, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	var o []*model.Order
 	err := pw.w.Select(ctx,
 		&o,
-		`SELECT * FROM orders WHERE status IN ('NEW', 'PROCESSING', 'REGISTERED')`,
-	)
+		`SELECT * FROM orders WHERE user_id=$1 AND status IN ('NEW', 'PROCESSING', 'REGISTERED')`,
+		userID)
 	if err != nil {
 		return o, err
 	}
