@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/accruals"
+	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/logger"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
 	"github.com/go-chi/jwtauth/v5"
@@ -66,7 +67,8 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !dt.Equal(o.UploadedAt) {
-			http.Error(w, fmt.Sprintf("order already exist: %v %v", dt, o.UploadedAt), http.StatusOK)
+			logger.Logger.Debug(fmt.Sprintf("TIME!!! %v ||| %v", dt, o.UploadedAt))
+			http.Error(w, "order already exist", http.StatusOK)
 			return
 		}
 	}
