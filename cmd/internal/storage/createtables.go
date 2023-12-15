@@ -8,64 +8,46 @@ func createTables(w *PgWorker) error {
 	//users
 	ctx := context.Background()
 	_, err := w.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS public.users
-		(
-			user_id uuid NOT NULL,
-			login character varying(128) COLLATE pg_catalog."default" NOT NULL,
-			password character varying(128) COLLATE pg_catalog."default" NOT NULL,
-			CONSTRAINT users_pkey PRIMARY KEY (user_id),
-			CONSTRAINT login UNIQUE (login)
-		)
-	`)
-	if err != nil {
-		return err
-	}
-	//orders
-	_, err = w.Exec(ctx, `
-			CREATE TABLE IF NOT EXISTS public.orders
-			(
-				"number" character varying(20) COLLATE pg_catalog."sdefault",
-				status character varying(50) COLLATE pg_catalog."default",
-				accrual numeric(19,2) DEFAULT 0,
-				uploaded_at timestamp with time zone,
-				user_id uuid,
-				CONSTRAINT number UNIQUE ("number")
-			)
-    `)
 
-	if err != nil {
-		return err
-	}
-
-	_, err = w.Exec(ctx, `
-
-
-CREATE TABLE IF NOT EXISTS public.withdrawals
-(
-    "order" character varying(128) COLLATE pg_catalog."default" NOT NULL,
-    summa numeric(19,2) DEFAULT 0
-)
-
-TABLESPACE pg_default;
-
-CREATE INDEX IF NOT EXISTS "order"
-    ON public.withdrawals USING btree
-    ("order" COLLATE pg_catalog."default" varchar_ops ASC NULLS LAST)
-    WITH (deduplicate_items=True)
-    TABLESPACE pg_default;
-			`)
-	if err != nil {
-		return err
-	}
-	_, err = w.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS public.balance
-		(
-			user_id uuid,
-			accrual numeric(19,2) DEFAULT 0,
-			withdraw numeric(19,2) DEFAULT 0,
-			CONSTRAINT user_id UNIQUE (user_id)
-		)
-		`)
+			CREATE TABLE public.accruals (
+				"order" varchar(128) NOT NULL,
+				summa float8 NULL
+			);
+			CREATE INDEX "order" ON public.accruals USING btree ("order" varchar_ops) WITH (deduplicate_items='true');
+			
+			CREATE TABLE public.balance (
+				user_id uuid NULL,
+				accrual numeric(19, 2) NULL DEFAULT 0,
+				withdraw numeric(19, 2) NULL DEFAULT 0,
+				"current" numeric(19, 2) NULL DEFAULT 0,
+				CONSTRAINT user_id UNIQUE (user_id)
+			);
+			
+			CREATE TABLE public.orders (
+				"number" varchar(20) NULL,
+				status varchar(50) NULL,
+				accrual numeric(19, 2) NULL DEFAULT 0,
+				uploaded_at timestamptz NULL,
+				user_id uuid NULL,
+				CONSTRAINT "number" UNIQUE (number)
+			);
+			
+			CREATE TABLE public.users (
+				user_id uuid NOT NULL,
+				login varchar(128) NOT NULL,
+				"password" varchar(128) NOT NULL,
+				CONSTRAINT login UNIQUE (login),
+				CONSTRAINT users_pkey PRIMARY KEY (user_id)
+			);
+			
+			
+			CREATE TABLE public.withdrawals (
+				"order" varchar(128) NULL,
+				summa numeric(19, 2) NULL,
+				processed_at timestamptz NULL,
+				user_id uuid NULL
+			);
+`)
 	if err != nil {
 		return err
 	}
