@@ -60,7 +60,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Logger.Debug(fmt.Sprintf("TIME!!! %v ||| %v", dt, o.UploadedAt))
+	logger.Logger.Debug(fmt.Sprintf("TIME? %v ||| %v", dt, o.UploadedAt))
 
 	if !o.UploadedAt.IsZero() {
 		if userID != o.UserID {
@@ -69,9 +69,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !dt.Equal(o.UploadedAt) {
-			//if dt.Unix() != o.UploadedAt.Unix() {
-			//logger.Logger.Debug(fmt.Sprintf("TIME!!! %v ||| %v", dt, o.UploadedAt))
-			//logger.Logger.Debug(fmt.Sprintf("TIME!!! %d ||| %d", dt.Unix(), o.UploadedAt.Unix()))
+			logger.Logger.Debug(fmt.Sprintf("WRONG TIME!!! %v ||| %v", dt, o.UploadedAt))
 			http.Error(w, "order already exist", http.StatusOK)
 			return
 		}
