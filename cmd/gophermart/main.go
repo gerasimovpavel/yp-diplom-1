@@ -28,14 +28,14 @@ func main() {
 		panic(err)
 	}
 	// запускаем сервер
-	router := router.MainRouter()
-	if router == nil {
+	r := router.MainRouter()
+	if r == nil {
 		panic(errors.New("failed to create main router"))
 	}
 	done := make(chan bool)
 	//scheduler.Schedule(accruals.CheckAccruals, time.Second, done)
 
-	err = http.ListenAndServe(config.Options.RunAddress, router)
+	err = http.ListenAndServe(config.Options.RunAddress, r)
 	if err != nil {
 		panic(err)
 	}

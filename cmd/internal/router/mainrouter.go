@@ -12,7 +12,7 @@ import (
 var tokenAuth *jwtauth.JWTAuth
 
 func MainRouter() chi.Router {
-	tokenAuth = jwtauth.New("HS512", []byte(config.Options.HMACSecret), nil)
+	tokenAuth = jwtauth.New("HS512", []byte(config.HMACSecret), nil)
 
 	r := chi.NewRouter()
 	r.Use(

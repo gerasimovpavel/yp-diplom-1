@@ -19,7 +19,7 @@ func CreateToken(user *model.User) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	signed, err := jwt.Sign(tok, jwt.WithKey(jwa.HS512, []byte(config.Options.HMACSecret)))
+	signed, err := jwt.Sign(tok, jwt.WithKey(jwa.HS512, []byte(config.HMACSecret)))
 	if err != nil {
 		return "", err
 	}
