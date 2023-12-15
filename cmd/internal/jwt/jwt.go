@@ -14,7 +14,7 @@ func CreateToken(user *model.User) (string, error) {
 	tok, err := jwt.NewBuilder().
 		Issuer("yp.diplom-1").
 		Claim("userId", user.UserID).
-		Expiration(time.Now().Add(24 * time.Hour)).
+		Expiration(time.Now().Round(0).Add(24 * time.Hour)).
 		Build()
 	if err != nil {
 		return "", err

@@ -47,7 +47,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
 		return
 	}
-	dt := time.Now()
+	dt := time.Now().Round(0)
 	o := &model.Order{
 		Number:     string(body),
 		UserID:     userID,
@@ -60,6 +60,8 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger.Logger.Debug(fmt.Sprintf("TIME!!! %v ||| %v", dt, o.UploadedAt))
+
 	if !o.UploadedAt.IsZero() {
 		if userID != o.UserID {
 			http.Error(w, "order added by another user", http.StatusConflict)
@@ -67,8 +69,9 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !dt.Equal(o.UploadedAt) {
+			//if dt.Unix() != o.UploadedAt.Unix() {
 			//logger.Logger.Debug(fmt.Sprintf("TIME!!! %v ||| %v", dt, o.UploadedAt))
-			logger.Logger.Debug(fmt.Sprintf("TIME!!! %d ||| %d", dt.Unix(), o.UploadedAt.Unix()))
+			//logger.Logger.Debug(fmt.Sprintf("TIME!!! %d ||| %d", dt.Unix(), o.UploadedAt.Unix()))
 			http.Error(w, "order already exist", http.StatusOK)
 			return
 		}

@@ -232,7 +232,7 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 		}
 		return w, err
 	}
-	t := time.Now()
+	t := time.Now().Round(0)
 	_, err = pw.w.Exec(ctx,
 		`INSERT INTO withdrawals ("order", summa, processed_at, user_id) VALUES ($1, $2, $3, $4)`,
 		w.Order, w.Sum, t, w.UserID,
