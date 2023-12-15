@@ -25,18 +25,22 @@ func main() {
 	// создаем Storage
 	storage.Stor, err = storage.NewPgStorage()
 	if err != nil {
+		logger.Logger.Error(err.Error())
 		panic(err)
 	}
 	// запускаем сервер
 	r := router.MainRouter()
 	if r == nil {
-		panic(errors.New("failed to create main router"))
+		err = errors.New("failed to create main router")
+		logger.Logger.Error(err.Error())
+		panic(err)
 	}
 	done := make(chan bool)
 	//scheduler.Schedule(accruals.CheckAccruals, time.Second, done)
 
 	err = http.ListenAndServe(config.Options.RunAddress, r)
 	if err != nil {
+		logger.Logger.Error(err.Error())
 		panic(err)
 	}
 	done <- true

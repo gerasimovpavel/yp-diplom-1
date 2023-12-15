@@ -16,10 +16,6 @@ func MainRouter() chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(
-		//chizap.New(logger.Logger, &chizap.Opts{
-		//	WithReferer:   true,
-		//	WithUserAgent: true,
-		//}),
 		chimw.Logger,
 		chimw.Compress(5),
 	)

@@ -17,7 +17,7 @@ func ParseEnvFlags() {
 	var ok bool
 	Options.AccrualSystemAddress, ok = os.LookupEnv(`ACCRUAL_SYSTEM_ADDRESS`)
 	if !ok {
-		flag.StringVarP(&Options.AccrualSystemAddress, "r", "r", "localhost:9091", "Адрес HTTP-сервера системы начислений")
+		flag.StringVarP(&Options.AccrualSystemAddress, "r", "r", ":8080", "Адрес HTTP-сервера системы начислений")
 	}
 	Options.DatabaseURI, ok = os.LookupEnv("DATABASE_URI")
 	if !ok {
@@ -25,7 +25,7 @@ func ParseEnvFlags() {
 	}
 	Options.RunAddress, ok = os.LookupEnv(`RUN_ADDRESS`)
 	if !ok {
-		flag.StringVarP(&Options.RunAddress, "a", "a", "localhost:9090", "Адрес HTTP-сервера")
+		flag.StringVarP(&Options.RunAddress, "a", "a", ":8081", "Адрес HTTP-сервера")
 	}
 	if !ok {
 		flag.Parse()
