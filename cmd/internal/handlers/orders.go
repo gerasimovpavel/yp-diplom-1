@@ -66,7 +66,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !dt.Equal(o.UploadedAt) {
-			http.Error(w, "order already exist", http.StatusOK)
+			http.Error(w, fmt.Sprintf("order already exist: %v %v", dt, o.UploadedAt), http.StatusOK)
 			return
 		}
 	}
