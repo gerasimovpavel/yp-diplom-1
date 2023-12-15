@@ -67,7 +67,8 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !dt.Equal(o.UploadedAt) {
-			logger.Logger.Debug(fmt.Sprintf("TIME!!! %v ||| %v", dt, o.UploadedAt))
+			//logger.Logger.Debug(fmt.Sprintf("TIME!!! %v ||| %v", dt, o.UploadedAt))
+			logger.Logger.Debug(fmt.Sprintf("TIME!!! %d ||| %d", dt.Unix(), o.UploadedAt.Unix()))
 			http.Error(w, "order already exist", http.StatusOK)
 			return
 		}
