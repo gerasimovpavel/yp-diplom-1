@@ -6,6 +6,7 @@ import (
 )
 
 type Order struct {
+	OrderID    uuid.UUID `json:"-" db:"order_id"`
 	Number     string    `json:"number" db:"number"`
 	UserID     uuid.UUID `json:"-" db:"user_id"`
 	UploadedAt time.Time `json:"uploaded_at" db:"uploaded_at"`

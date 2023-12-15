@@ -29,6 +29,7 @@ func createTables(w *PgWorker) error {
 				accrual numeric(19, 2) NULL DEFAULT 0,
 				uploaded_at timestamptz NULL,
 				user_id uuid NULL,
+				order_id uuid NULL,
 				CONSTRAINT "number" UNIQUE (number)
 			);
 			

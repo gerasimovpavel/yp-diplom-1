@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/accruals"
-	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/logger"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
 	"github.com/go-chi/jwtauth/v5"
@@ -47,12 +46,15 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
 		return
 	}
-	dt := time.Now().Round(0)
+
+	orderID := uuid.New()
+
 	o := &model.Order{
+		OrderID:    orderID,
 		Number:     string(body),
 		UserID:     userID,
 		Status:     "NEW",
-		UploadedAt: dt}
+		UploadedAt: time.Now().Round(0).Truncate(time.Second)}
 
 	o, err = storage.Stor.SetOrder(context.Background(), o)
 	if err != nil {
@@ -60,20 +62,19 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Logger.Debug(fmt.Sprintf("TIME? %v ||| %v", dt, o.UploadedAt))
-
 	if !o.UploadedAt.IsZero() {
 		if userID != o.UserID {
 			http.Error(w, "order added by another user", http.StatusConflict)
 			return
 		}
 
-		if !dt.Equal(o.UploadedAt) {
-			logger.Logger.Debug(fmt.Sprintf("WRONG TIME!!! %v ||| %v", dt, o.UploadedAt))
+		if orderID != o.OrderID {
+
 			http.Error(w, "order already exist", http.StatusOK)
 			return
 		}
 	}
+
 	w.WriteHeader(http.StatusAccepted)
 }
 

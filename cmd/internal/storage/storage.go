@@ -102,13 +102,13 @@ func (pw *PgStorage) SetOrder(ctx context.Context, o *model.Order) (*model.Order
 		ctx = context.Background()
 	}
 	orders := []*model.Order{}
-	sqlString := `INSERT INTO orders (number, user_id, status, uploaded_at, accrual) 
-				  VALUES ($1,$2,$3,$4,$5) 
+	sqlString := `INSERT INTO orders (order_id, number, user_id, status, uploaded_at, accrual) 
+				  VALUES ($1,$2,$3,$4,$5,$6) 
 				  ON CONFLICT (number) DO 
 				    UPDATE SET status=excluded.status, accrual = excluded.accrual
-				    RETURNING number, user_id, status, uploaded_at`
+				    RETURNING order_id, number, user_id, status, uploaded_at`
 
-	err := pw.w.Select(ctx, &orders, sqlString, o.Number, o.UserID, o.Status, o.UploadedAt, o.Accrual)
+	err := pw.w.Select(ctx, &orders, sqlString, o.OrderID, o.Number, o.UserID, o.Status, o.UploadedAt, o.Accrual)
 	if err != nil {
 		return o, err
 	}
@@ -232,7 +232,7 @@ func (pw *PgStorage) SetWithdraw(ctx context.Context, w *model.Withdraw) (*model
 		}
 		return w, err
 	}
-	t := time.Now().Round(0)
+	t := time.Now().Round(0).Truncate(time.Second)
 	_, err = pw.w.Exec(ctx,
 		`INSERT INTO withdrawals ("order", summa, processed_at, user_id) VALUES ($1, $2, $3, $4)`,
 		w.Order, w.Sum, t, w.UserID,
