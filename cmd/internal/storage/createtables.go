@@ -9,13 +9,13 @@ func createTables(w *PgWorker) error {
 	ctx := context.Background()
 	_, err := w.Exec(ctx, `
 
-			CREATE TABLE public.accruals (
+			CREATE TABLE IF NOT EXISTS public.accruals (
 				"order" varchar(128) NOT NULL,
 				summa float8 NULL
 			);
-			CREATE INDEX "order" ON public.accruals USING btree ("order" varchar_ops) WITH (deduplicate_items='true');
+			CREATE INDEX IF NOT EXISTS "order" ON public.accruals USING btree ("order" varchar_ops) WITH (deduplicate_items='true');
 			
-			CREATE TABLE public.balance (
+			CREATE TABLE IF NOT EXISTS public.balance (
 				user_id uuid NULL,
 				accrual numeric(19, 2) NULL DEFAULT 0,
 				withdraw numeric(19, 2) NULL DEFAULT 0,
@@ -23,7 +23,7 @@ func createTables(w *PgWorker) error {
 				CONSTRAINT user_id UNIQUE (user_id)
 			);
 			
-			CREATE TABLE public.orders (
+			CREATE TABLE IF NOT EXISTS public.orders (
 				"number" varchar(20) NULL,
 				status varchar(50) NULL,
 				accrual numeric(19, 2) NULL DEFAULT 0,
@@ -32,7 +32,7 @@ func createTables(w *PgWorker) error {
 				CONSTRAINT "number" UNIQUE (number)
 			);
 			
-			CREATE TABLE public.users (
+			CREATE TABLE IF NOT EXISTS public.users (
 				user_id uuid NOT NULL,
 				login varchar(128) NOT NULL,
 				"password" varchar(128) NOT NULL,
@@ -41,7 +41,7 @@ func createTables(w *PgWorker) error {
 			);
 			
 			
-			CREATE TABLE public.withdrawals (
+			CREATE TABLE IF NOT EXISTS public.withdrawals (
 				"order" varchar(128) NULL,
 				summa numeric(19, 2) NULL,
 				processed_at timestamptz NULL,
