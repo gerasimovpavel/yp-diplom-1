@@ -53,12 +53,12 @@ jobs:
       - name: Test
         run: |
           gophermarttest \
-            -test.v -test.run=^TestGophermart$
-            -gophermart-binary-path=cmd/gophermart/gophermart \
+            -test.v -test.run=^TestGophermart$ \
+            -gophermart-binary-path=/cmd/gophermart/gophermart \
             -gophermart-host=localhost \
             -gophermart-port=8080 \
             -gophermart-database-uri='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
-            -accrual-binary-path=cmd/accrual/accrual_linux_amd64 \
+            -accrual-binary-path=/cmd/accrual/accrual_linux_amd64 \
             -accrual-host=localhost \
             -accrual-port=$(random unused-port) \
             -accrual-database-uri='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable'
