@@ -11,7 +11,7 @@ import (
 )
 
 func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
-	userID, errorString, status := UserIdFromToken(r)
+	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
 		return
@@ -39,7 +39,7 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostWithdraw(w http.ResponseWriter, r *http.Request) {
-	userID, errorString, status := UserIdFromToken(r)
+	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
 		return

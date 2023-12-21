@@ -71,6 +71,7 @@ func Test_GetBalanceHandlers(t *testing.T) {
 			var res *http.Response
 			tt.hfunc(w, req)
 			res = w.Result()
+			defer res.Body.Close()
 
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
 				panic(fmt.Errorf("status expect %v actual %v", tt.wantStatuses, res.StatusCode))

@@ -15,7 +15,7 @@ import (
 )
 
 func PostOrders(w http.ResponseWriter, r *http.Request) {
-	userID, errorString, status := UserIdFromToken(r)
+	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
 		return
@@ -66,7 +66,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOrders(w http.ResponseWriter, r *http.Request) {
-	userID, errorString, status := UserIdFromToken(r)
+	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
 		return

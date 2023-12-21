@@ -39,7 +39,7 @@ func CreateWrongKeyToken(user *model.User) (string, error) {
 func CreateWrongValueToken(user *model.User) (string, error) {
 	tok, err := jwt2.NewBuilder().
 		Issuer("yp.diplom-1").
-		Claim("userId", strconv.Itoa(gofakeit.Number(6, 10))).
+		Claim("userID", strconv.Itoa(gofakeit.Number(6, 10))).
 		Expiration(time.Now().Round(0).Truncate(time.Second).Add(24 * time.Hour)).
 		Build()
 	if err != nil {
@@ -68,7 +68,7 @@ func Test_GetOrders(t *testing.T) {
 		tokenKeyCorrect   bool
 		tokenValueCorrect bool
 		auth              bool
-		userId            string
+		userID            string
 		login             string
 		password          string
 		order             string
@@ -100,7 +100,7 @@ func Test_GetOrders(t *testing.T) {
 			GetOrders,
 		},
 		{
-			"token failed parse userId",
+			"token failed parse userID",
 			true,
 			false,
 			true,
@@ -149,14 +149,14 @@ func Test_GetOrders(t *testing.T) {
 					switch tt.tokenKeyCorrect {
 					case false:
 						{
-							tokenString, err = CreateWrongKeyToken(&model.User{tt.userId, tt.login, tt.password})
+							tokenString, err = CreateWrongKeyToken(&model.User{tt.userID, tt.login, tt.password})
 							if err != nil {
 								panic(err)
 							}
 						}
 					case true:
 						{
-							tokenString, err = CreateWrongValueToken(&model.User{tt.userId, tt.login, tt.password})
+							tokenString, err = CreateWrongValueToken(&model.User{tt.userID, tt.login, tt.password})
 							if err != nil {
 								panic(err)
 							}
@@ -179,6 +179,7 @@ func Test_GetOrders(t *testing.T) {
 			var res *http.Response
 			tt.hfunc(w, req)
 			res = w.Result()
+			defer res.Body.Close()
 
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
 				panic(fmt.Errorf("status expect %v actual %v", tt.wantStatuses, res.StatusCode))
@@ -202,7 +203,7 @@ func Test_PostOrders(t *testing.T) {
 		tokenKeyCorrect   bool
 		tokenValueCorrect bool
 		auth              bool
-		userId            string
+		userID            string
 		login             string
 		password          string
 		order             string
@@ -234,7 +235,7 @@ func Test_PostOrders(t *testing.T) {
 			PostOrders,
 		},
 		{
-			"token failed parse userId",
+			"token failed parse userID",
 			true,
 			false,
 			true,
@@ -296,14 +297,14 @@ func Test_PostOrders(t *testing.T) {
 					switch tt.tokenKeyCorrect {
 					case false:
 						{
-							tokenString, err = CreateWrongKeyToken(&model.User{tt.userId, tt.login, tt.password})
+							tokenString, err = CreateWrongKeyToken(&model.User{tt.userID, tt.login, tt.password})
 							if err != nil {
 								panic(err)
 							}
 						}
 					case true:
 						{
-							tokenString, err = CreateWrongValueToken(&model.User{tt.userId, tt.login, tt.password})
+							tokenString, err = CreateWrongValueToken(&model.User{tt.userID, tt.login, tt.password})
 							if err != nil {
 								panic(err)
 							}
@@ -325,6 +326,7 @@ func Test_PostOrders(t *testing.T) {
 			w := httptest.NewRecorder()
 			var res *http.Response
 			tt.hfunc(w, req)
+			defer res.Body.Close()
 			res = w.Result()
 
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
