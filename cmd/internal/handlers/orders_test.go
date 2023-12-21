@@ -326,9 +326,9 @@ func Test_PostOrders(t *testing.T) {
 			w := httptest.NewRecorder()
 			var res *http.Response
 			tt.hfunc(w, req)
-			defer res.Body.Close()
-			res = w.Result()
 
+			res = w.Result()
+			defer res.Body.Close()
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
 				panic(fmt.Errorf("status expect %v actual %v", tt.wantStatuses, res.StatusCode))
 			}
