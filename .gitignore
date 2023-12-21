@@ -22,3 +22,7 @@ vendor/
 .idea
 .vscode
 /bin/go_build_main_go
+logs/test.log
+cmd/.DS_Store
+logs/.DS_Store
+.DS_Store
