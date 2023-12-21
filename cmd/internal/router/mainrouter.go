@@ -33,7 +33,6 @@ func MainRouter() chi.Router {
 					})
 					r.Route("/balance", func(r chi.Router) {
 						r.Get("/", handlers.GetBalance)
-						r.Put("/", handlers.UpdateBalance)
 						r.Post("/withdraw", handlers.PostWithdraw)
 					})
 					r.Get("/withdrawals", handlers.GetWithdrawals)
