@@ -8,7 +8,6 @@ import (
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/accruals"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
-	"github.com/go-chi/jwtauth/v5"
 	"github.com/google/uuid"
 	"io"
 	"net/http"
@@ -16,6 +15,12 @@ import (
 )
 
 func PostOrders(w http.ResponseWriter, r *http.Request) {
+	userID, errorString, status := UserIdFromToken(r)
+	if errorString != "" {
+		http.Error(w, errorString, status)
+		return
+	}
+
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -26,24 +31,6 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 	err = goluhn.Validate(string(body))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\norder number is invalid", err), http.StatusUnprocessableEntity)
-		return
-	}
-
-	token, _, err := jwtauth.FromContext(r.Context())
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to read token", err), http.StatusInternalServerError)
-		return
-	}
-
-	u, ok := token.Get("userId")
-	if !ok {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-		return
-	}
-
-	userID, err := uuid.Parse(u.(string))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
 		return
 	}
 
@@ -79,22 +66,9 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOrders(w http.ResponseWriter, r *http.Request) {
-
-	token, _, err := jwtauth.FromContext(r.Context())
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to read token", err), http.StatusInternalServerError)
-		return
-	}
-
-	u, ok := token.Get("userId")
-	if !ok {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-		return
-	}
-
-	userID, err := uuid.Parse(u.(string))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+	userID, errorString, status := UserIdFromToken(r)
+	if errorString != "" {
+		http.Error(w, errorString, status)
 		return
 	}
 

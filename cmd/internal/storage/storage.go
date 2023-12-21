@@ -62,6 +62,9 @@ func (pw *PgStorage) GetUser(ctx context.Context, a *model.User) (*model.User, e
 	if err != nil {
 		return a, err
 	}
+	if len(users) == 0 {
+		return a, errors.New("user not found")
+	}
 	return users[0], nil
 }
 
@@ -91,7 +94,7 @@ func (pw *PgStorage) GetOrderByUser(ctx context.Context, userID uuid.UUID) ([]*m
 	sqlString := `SELECT * FROM orders WHERE user_id=$1`
 
 	err := pw.w.Select(ctx, &orders, sqlString, userID)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return orders, err
 	}
 	return orders, nil

@@ -6,28 +6,14 @@ import (
 	"fmt"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
-	"github.com/go-chi/jwtauth/v5"
-	"github.com/google/uuid"
 	"io"
 	"net/http"
 )
 
 func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
-	token, _, err := jwtauth.FromContext(r.Context())
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to read token", err), http.StatusInternalServerError)
-		return
-	}
-
-	u, ok := token.Get("userId")
-	if !ok {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-		return
-	}
-
-	userID, err := uuid.Parse(u.(string))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
+	userID, errorString, status := UserIdFromToken(r)
+	if errorString != "" {
+		http.Error(w, errorString, status)
 		return
 	}
 
@@ -53,29 +39,18 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostWithdraw(w http.ResponseWriter, r *http.Request) {
+	userID, errorString, status := UserIdFromToken(r)
+	if errorString != "" {
+		http.Error(w, errorString, status)
+		return
+	}
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to read body", err), http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
-
-	token, _, err := jwtauth.FromContext(r.Context())
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to read token", err), http.StatusInternalServerError)
-		return
-	}
-	u, ok := token.Get("userId")
-	if !ok {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-		return
-	}
-
-	userID, err := uuid.Parse(u.(string))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nuser info not found", err), http.StatusUnauthorized)
-		return
-	}
 
 	wd := &model.Withdraw{}
 	err = json.Unmarshal(body, wd)
