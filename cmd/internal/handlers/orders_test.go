@@ -149,14 +149,21 @@ func Test_GetOrders(t *testing.T) {
 					switch tt.tokenKeyCorrect {
 					case false:
 						{
-							tokenString, err = CreateWrongKeyToken(&model.User{tt.userID, tt.login, tt.password})
+							tokenString, err = CreateWrongKeyToken(
+								&model.User{
+									UserID:   tt.userID,
+									Login:    tt.login,
+									Password: tt.password})
 							if err != nil {
 								panic(err)
 							}
 						}
 					case true:
 						{
-							tokenString, err = CreateWrongValueToken(&model.User{tt.userID, tt.login, tt.password})
+							tokenString, err = CreateWrongValueToken(&model.User{
+								UserID:   tt.userID,
+								Login:    tt.login,
+								Password: tt.password})
 							if err != nil {
 								panic(err)
 							}
@@ -297,14 +304,14 @@ func Test_PostOrders(t *testing.T) {
 					switch tt.tokenKeyCorrect {
 					case false:
 						{
-							tokenString, err = CreateWrongKeyToken(&model.User{tt.userID, tt.login, tt.password})
+							tokenString, err = CreateWrongKeyToken(&model.User{UserID: tt.userID, Login: tt.login, Password: tt.password})
 							if err != nil {
 								panic(err)
 							}
 						}
 					case true:
 						{
-							tokenString, err = CreateWrongValueToken(&model.User{tt.userID, tt.login, tt.password})
+							tokenString, err = CreateWrongValueToken(&model.User{UserID: tt.userID, Login: tt.login, Password: tt.password})
 							if err != nil {
 								panic(err)
 							}
