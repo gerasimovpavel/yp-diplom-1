@@ -14,28 +14,28 @@ import (
 	"net/http"
 )
 
-func CheckUserLoginPassword(r *http.Request) (*model.User, error, int) {
+func CheckUserLoginPassword(r *http.Request) (*model.User, int, error) {
 	if r.Header.Get("Content-Type") != "application/json" {
-		return nil, errors.New("wrong Content-Type"), http.StatusBadRequest
+		return nil, http.StatusBadRequest, errors.New("wrong Content-Type")
 	}
 
 	body, err := io.ReadAll(r.Body)
 	r.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("%v\n\nfailed to read  body: ", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("%v\n\nfailed to read  body: ", err)
 	}
 
 	user := &model.User{}
 	err = json.Unmarshal(body, user)
 	if err != nil {
-		return nil, fmt.Errorf("%v\n\nfailed to deserialize body", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("%v\n\nfailed to deserialize body", err)
 
 	}
-	return user, nil, http.StatusOK
+	return user, http.StatusOK, nil
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	user, err, code := CheckUserLoginPassword(r)
+	user, code, err := CheckUserLoginPassword(r)
 	if err != nil {
 		http.Error(w, err.Error(), code)
 		return
@@ -60,7 +60,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	user, err, code := CheckUserLoginPassword(r)
+	user, code, err := CheckUserLoginPassword(r)
 	if err != nil {
 		http.Error(w, err.Error(), code)
 		return

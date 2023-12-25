@@ -67,6 +67,10 @@ func Test_GetWithdrawals(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tokenString, err := jwt.CreateToken(user)
+			if err != nil {
+				panic(err)
+			}
+
 			ja := jwtauth.New("HS512", []byte(config.HMACSecret), nil)
 
 			token, err := jwtauth.VerifyToken(ja, tokenString)
