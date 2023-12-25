@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-type accrual struct {
+type Accrual struct {
 	Order   string  `json:"order"`
 	Status  string  `json:"status"`
 	Accrual float32 `json:"accrual"`
@@ -31,17 +31,17 @@ func CheckAccruals(userID uuid.UUID) {
 	wg := sync.WaitGroup{}
 	logger.Logger.Info(fmt.Sprintf("orders count:%d", len(orders)))
 	logger.Logger.Info("check order accruals start...")
-	for _, o := range orders {
+	for _, ord := range orders {
 		wg.Add(1)
-		go func(ord *model.Order) {
-			var a accrual
+		go func(order *model.Order) {
+			accrual := Accrual{}
 
 			defer wg.Done()
 			httpc := resty.New().SetBaseURL(config.Options.AccrualSystemAddress)
 			req := httpc.R().
-				SetContext(context.Background()).SetResult(&a)
+				SetContext(context.Background()).SetResult(&accrual)
 
-			resp, err := req.Get(fmt.Sprintf("/api/orders/%s", ord.Number))
+			resp, err := req.Get(fmt.Sprintf("/api/orders/%s", order.Number))
 			body := resp.Body()
 			if err != nil {
 				logger.Logger.Error(err.Error())
@@ -49,17 +49,17 @@ func CheckAccruals(userID uuid.UUID) {
 			if resp.StatusCode() != 200 {
 				logger.Logger.Warn(fmt.Sprintf("status: %d body: %s", resp.StatusCode(), body))
 			}
-			o1, _ := json.Marshal(a)
-			o2, _ := json.Marshal(ord)
+			accrualJSON, _ := json.Marshal(accrual)
+			orderJSON, _ := json.Marshal(order)
 			logger.Logger.Debug("MAGIC???")
-			logger.Logger.Debug(string(o1))
-			logger.Logger.Debug(string(o2))
+			logger.Logger.Debug(string(accrualJSON))
+			logger.Logger.Debug(string(orderJSON))
 
-			if a.Order == ord.Number && a.Status != ord.Status {
+			if accrual.Order == order.Number && accrual.Status != order.Status {
 				logger.Logger.Debug("MAGIC!!!")
-				ord.Accrual = a.Accrual
-				ord.Status = a.Status
-				_, err = storage.Stor.SetOrder(ctx, ord)
+				order.Accrual = accrual.Accrual
+				order.Status = accrual.Status
+				_, err = storage.Stor.SetOrder(ctx, order)
 				if err != nil {
 					logger.Logger.Error(err.Error())
 				}
@@ -68,7 +68,7 @@ func CheckAccruals(userID uuid.UUID) {
 					logger.Logger.Error(err.Error())
 				}
 			}
-		}(o)
+		}(ord)
 
 	}
 	logger.Logger.Info("check order accruals end...")

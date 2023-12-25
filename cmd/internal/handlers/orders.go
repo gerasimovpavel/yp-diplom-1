@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func PostOrders(w http.ResponseWriter, r *http.Request) {
+func SaveOrders(w http.ResponseWriter, r *http.Request) {
 	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
@@ -22,7 +22,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
+	r.Body.Close()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to read  body", err), http.StatusInternalServerError)
 		return
@@ -65,7 +65,7 @@ func PostOrders(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func GetOrders(w http.ResponseWriter, r *http.Request) {
+func LoadOrders(w http.ResponseWriter, r *http.Request) {
 	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
@@ -93,5 +93,10 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, string(body))
+
+	_, err = io.WriteString(w, string(body))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to write to response writer", err), http.StatusInternalServerError)
+		return
+	}
 }

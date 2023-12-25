@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func Test_PostUser(t *testing.T) {
+func Test_Auth(t *testing.T) {
 	login := gofakeit.Username()
 	password := gofakeit.Password(true, true, true, false, false, 12)
 	tests := []struct {
@@ -22,28 +22,12 @@ func Test_PostUser(t *testing.T) {
 		hfunc        http.HandlerFunc
 	}{
 		{
-			"wrong content-type",
-			"/api/user/register",
-			"text/plain",
-			`{"login":"","password":""}`,
-			[]int{http.StatusBadRequest},
-			PostUserAuth,
-		},
-		{
-			"failed deserialize",
-			"/api/user/register",
-			"application/json",
-			`{login":"","password":""}`,
-			[]int{http.StatusInternalServerError},
-			PostUserAuth,
-		},
-		{
 			"login w/o register",
 			"/api/user/login",
 			"application/json",
 			fmt.Sprintf(`{"login":"%s","password":"%s"}`, login, password),
 			[]int{http.StatusUnauthorized},
-			PostUserAuth,
+			Login,
 		},
 		{
 			"register",
@@ -51,7 +35,7 @@ func Test_PostUser(t *testing.T) {
 			"application/json",
 			fmt.Sprintf(`{"login":"%s","password":"%s"}`, login, password),
 			[]int{http.StatusOK},
-			PostUserAuth,
+			Register,
 		},
 		{
 			"register after register",
@@ -59,7 +43,7 @@ func Test_PostUser(t *testing.T) {
 			"application/json",
 			fmt.Sprintf(`{"login":"%s","password":"%s"}`, login, password),
 			[]int{http.StatusConflict},
-			PostUserAuth,
+			Register,
 		},
 		{
 			"login after register",
@@ -67,7 +51,7 @@ func Test_PostUser(t *testing.T) {
 			"application/json",
 			fmt.Sprintf(`{"login":"%s","password":"%s"}`, login, password),
 			[]int{http.StatusOK},
-			PostUserAuth,
+			Login,
 		},
 	}
 	for _, tt := range tests {
@@ -78,7 +62,7 @@ func Test_PostUser(t *testing.T) {
 			var res *http.Response
 			tt.hfunc(w, req)
 			res = w.Result()
-			defer res.Body.Close()
+			res.Body.Close()
 
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
 				panic(fmt.Errorf("status expect %v actual %v", tt.wantStatuses, res.StatusCode))

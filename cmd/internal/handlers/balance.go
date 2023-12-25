@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func GetBalance(w http.ResponseWriter, r *http.Request) {
+func LoadBalance(w http.ResponseWriter, r *http.Request) {
 	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
@@ -28,5 +28,9 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, string(body))
+	_, err = io.WriteString(w, string(body))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to write to response writer", err), http.StatusInternalServerError)
+		return
+	}
 }

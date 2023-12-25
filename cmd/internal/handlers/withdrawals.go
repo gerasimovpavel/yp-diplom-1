@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
+func LoadWithdrawals(w http.ResponseWriter, r *http.Request) {
 	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
@@ -35,10 +35,14 @@ func GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, string(body))
+	_, err = io.WriteString(w, string(body))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to write to response writer", err), http.StatusInternalServerError)
+		return
+	}
 }
 
-func PostWithdraw(w http.ResponseWriter, r *http.Request) {
+func SaveWithdraw(w http.ResponseWriter, r *http.Request) {
 	userID, errorString, status := UserIDFromToken(r)
 	if errorString != "" {
 		http.Error(w, errorString, status)
@@ -50,7 +54,7 @@ func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed to read body", err), http.StatusInternalServerError)
 		return
 	}
-	defer r.Body.Close()
+	r.Body.Close()
 
 	wd := &model.Withdraw{}
 	err = json.Unmarshal(body, wd)
@@ -67,5 +71,9 @@ func PostWithdraw(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, string(body))
+	_, err = io.WriteString(w, string(body))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to write to response writer", err), http.StatusInternalServerError)
+		return
+	}
 }

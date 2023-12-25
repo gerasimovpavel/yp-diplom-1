@@ -8,13 +8,14 @@ import (
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-func Test_GetBalanceHandlers(t *testing.T) {
+func Test_LoadBalance(t *testing.T) {
 	var err error
 	config.Options.DatabaseURI = "host=localhost user=shortener password=shortener dbname=gofermart sslmode=disable"
 	gofakeit.Seed(0)
@@ -32,13 +33,13 @@ func Test_GetBalanceHandlers(t *testing.T) {
 			"Check Get Balance w/o auth",
 			false,
 			[]int{http.StatusUnauthorized},
-			GetBalance,
+			LoadBalance,
 		},
 		{
 			"Check Get Balance with auth",
 			true,
 			[]int{http.StatusOK, http.StatusNoContent},
-			GetBalance,
+			LoadBalance,
 		},
 	}
 
@@ -51,7 +52,7 @@ func Test_GetBalanceHandlers(t *testing.T) {
 
 			if tt.auth {
 				user := &model.User{}
-				user.UserID = gofakeit.UUID()
+				user.UserID = uuid.New()
 				user.Login = gofakeit.Username()
 				user.Password = gofakeit.Password(true, true, true, false, false, 8)
 				tokenString, err = jwt.CreateToken(user)
@@ -71,7 +72,7 @@ func Test_GetBalanceHandlers(t *testing.T) {
 			var res *http.Response
 			tt.hfunc(w, req)
 			res = w.Result()
-			defer res.Body.Close()
+			res.Body.Close()
 
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
 				panic(fmt.Errorf("status expect %v actual %v", tt.wantStatuses, res.StatusCode))

@@ -8,6 +8,7 @@ import (
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/storage"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	jwt2 "github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,7 @@ func CreateWrongKeyToken(user *model.User) (string, error) {
 	return string(signed), nil
 }
 
-func CreateWrongValueToken(user *model.User) (string, error) {
+func CreateWrongValueToken() (string, error) {
 	tok, err := jwt2.NewBuilder().
 		Issuer("yp.diplom-1").
 		Claim("userID", strconv.Itoa(gofakeit.Number(6, 10))).
@@ -53,7 +54,7 @@ func CreateWrongValueToken(user *model.User) (string, error) {
 	return string(signed), nil
 }
 
-func Test_GetOrders(t *testing.T) {
+func Test_LoadOrders(t *testing.T) {
 	var err error
 	config.Options.DatabaseURI = "host=localhost user=shortener password=shortener dbname=gofermart sslmode=disable"
 	gofakeit.Seed(0)
@@ -68,7 +69,7 @@ func Test_GetOrders(t *testing.T) {
 		tokenKeyCorrect   bool
 		tokenValueCorrect bool
 		auth              bool
-		userID            string
+		userID            uuid.UUID
 		login             string
 		password          string
 		order             string
@@ -80,48 +81,48 @@ func Test_GetOrders(t *testing.T) {
 			false,
 			false,
 			false,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.CreditCardNumberLuhn()),
 			[]int{http.StatusUnauthorized},
-			GetOrders,
+			LoadOrders,
 		},
 		{
 			"token user info error",
 			false,
 			true,
 			true,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.Number(3, 10)),
 			[]int{http.StatusUnauthorized},
-			GetOrders,
+			LoadOrders,
 		},
 		{
 			"token failed parse userID",
 			true,
 			false,
 			true,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.Number(3, 10)),
 			[]int{http.StatusUnauthorized},
-			GetOrders,
+			LoadOrders,
 		},
 		{
 			"get orders from storage",
 			true,
 			true,
 			true,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.Number(3, 10)),
 			[]int{http.StatusNoContent, http.StatusOK},
-			GetOrders,
+			LoadOrders,
 		},
 	}
 
@@ -160,10 +161,7 @@ func Test_GetOrders(t *testing.T) {
 						}
 					case true:
 						{
-							tokenString, err = CreateWrongValueToken(&model.User{
-								UserID:   tt.userID,
-								Login:    tt.login,
-								Password: tt.password})
+							tokenString, err = CreateWrongValueToken()
 							if err != nil {
 								panic(err)
 							}
@@ -186,7 +184,7 @@ func Test_GetOrders(t *testing.T) {
 			var res *http.Response
 			tt.hfunc(w, req)
 			res = w.Result()
-			defer res.Body.Close()
+			res.Body.Close()
 
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
 				panic(fmt.Errorf("status expect %v actual %v", tt.wantStatuses, res.StatusCode))
@@ -195,7 +193,7 @@ func Test_GetOrders(t *testing.T) {
 	}
 }
 
-func Test_PostOrders(t *testing.T) {
+func Test_SaveOrders(t *testing.T) {
 	var err error
 	config.Options.DatabaseURI = "host=localhost user=shortener password=shortener dbname=gofermart sslmode=disable"
 	gofakeit.Seed(0)
@@ -210,7 +208,7 @@ func Test_PostOrders(t *testing.T) {
 		tokenKeyCorrect   bool
 		tokenValueCorrect bool
 		auth              bool
-		userID            string
+		userID            uuid.UUID
 		login             string
 		password          string
 		order             string
@@ -222,60 +220,60 @@ func Test_PostOrders(t *testing.T) {
 			false,
 			false,
 			false,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.CreditCardNumberLuhn()),
 			[]int{http.StatusUnauthorized},
-			PostOrders,
+			SaveOrders,
 		},
 		{
 			"token user info error",
 			false,
 			true,
 			true,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.Number(3, 10)),
 			[]int{http.StatusUnauthorized},
-			PostOrders,
+			SaveOrders,
 		},
 		{
 			"token failed parse userID",
 			true,
 			false,
 			true,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.Number(3, 10)),
 			[]int{http.StatusUnauthorized},
-			PostOrders,
+			SaveOrders,
 		},
 		{
 			"post orders(no luhn) from storage",
 			true,
 			true,
 			true,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.Number(3, 10)),
 			[]int{http.StatusUnprocessableEntity},
-			PostOrders,
+			SaveOrders,
 		},
 		{
 			"post orders(uhn) from storage",
 			true,
 			true,
 			true,
-			gofakeit.UUID(),
+			uuid.New(),
 			gofakeit.Username(),
 			gofakeit.Password(true, true, true, false, false, 9),
 			strconv.Itoa(gofakeit.CreditCardNumberLuhn()),
 			[]int{http.StatusAccepted},
-			PostOrders,
+			SaveOrders,
 		},
 	}
 
@@ -311,7 +309,7 @@ func Test_PostOrders(t *testing.T) {
 						}
 					case true:
 						{
-							tokenString, err = CreateWrongValueToken(&model.User{UserID: tt.userID, Login: tt.login, Password: tt.password})
+							tokenString, err = CreateWrongValueToken()
 							if err != nil {
 								panic(err)
 							}
@@ -335,7 +333,8 @@ func Test_PostOrders(t *testing.T) {
 			tt.hfunc(w, req)
 
 			res = w.Result()
-			defer res.Body.Close()
+			res.Body.Close()
+
 			if !assert.Contains(t, tt.wantStatuses, res.StatusCode) {
 				panic(fmt.Errorf("status expect %v actual %v", tt.wantStatuses, res.StatusCode))
 			}

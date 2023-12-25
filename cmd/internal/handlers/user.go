@@ -14,51 +14,72 @@ import (
 	"net/http"
 )
 
-func PostUserAuth(w http.ResponseWriter, r *http.Request) {
-
+func CheckUserLoginPassword(r *http.Request) (*model.User, error, int) {
 	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "wrong Content-Type", http.StatusBadRequest)
-		return
+		return nil, errors.New("wrong Content-Type"), http.StatusBadRequest
 	}
 
 	body, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
+	r.Body.Close()
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to read  body", err), http.StatusInternalServerError)
+		return nil, fmt.Errorf("%v\n\nfailed to read  body: ", err), http.StatusInternalServerError
+	}
+
+	user := &model.User{}
+	err = json.Unmarshal(body, user)
+	if err != nil {
+		return nil, fmt.Errorf("%v\n\nfailed to deserialize body", err), http.StatusInternalServerError
+
+	}
+	return user, nil, http.StatusOK
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	user, err, code := CheckUserLoginPassword(r)
+	if err != nil {
+		http.Error(w, err.Error(), code)
 		return
 	}
 
-	a := &model.User{}
-	err = json.Unmarshal(body, a)
+	user, err = storage.Stor.GetUser(context.Background(), user)
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("%v\n\nfailed to deserialize body", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to find user/password", err), http.StatusUnauthorized)
 		return
 	}
 
-	if r.URL.Path == "/api/user/register" {
-		a, err = storage.Stor.CreateUser(context.Background(), a)
-		if err != nil {
+	tokenString, err := jwt.CreateToken(user)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%v\n\nfailed create auth token", err), http.StatusInternalServerError)
+		return
+	}
 
-			var pgErr *pgconn.PgError
-			if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-				http.Error(w, "login already exist", http.StatusConflict)
-				return
-			}
+	w.Header().Set("Content-Type", "")
+	w.Header().Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
+	w.WriteHeader(http.StatusOK)
+}
 
-			http.Error(w, fmt.Sprintf("%v\n\nfailed to create user", err), http.StatusInternalServerError)
+func Register(w http.ResponseWriter, r *http.Request) {
+	user, err, code := CheckUserLoginPassword(r)
+	if err != nil {
+		http.Error(w, err.Error(), code)
+		return
+	}
+
+	user, err = storage.Stor.CreateUser(context.Background(), user)
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			http.Error(w, "login already exist", http.StatusConflict)
 			return
 		}
-	}
-	if r.URL.Path == "/api/user/login" {
-		a, err = storage.Stor.GetUser(context.Background(), a)
 
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%v\n\nfailed to find user/password", err), http.StatusUnauthorized)
-			return
-		}
+		http.Error(w, fmt.Sprintf("%v\n\nfailed to create user", err), http.StatusInternalServerError)
+		return
 	}
-	tokenString, err := jwt.CreateToken(a)
+
+	tokenString, err := jwt.CreateToken(user)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%v\n\nfailed create auth token", err), http.StatusInternalServerError)
 		return

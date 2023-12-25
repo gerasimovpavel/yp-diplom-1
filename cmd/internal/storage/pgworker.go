@@ -18,13 +18,13 @@ type PgWorker struct {
 }
 
 func NewPgWorker() (*PgWorker, error) {
-	config, err := pgxpool.ParseConfig(config.Options.DatabaseURI)
+	cfg, err := pgxpool.ParseConfig(config.Options.DatabaseURI)
 	if err != nil {
 		return nil, err
 	}
-	config.MaxConns = 50
+	cfg.MaxConns = 50
 
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	pool, err := pgxpool.NewWithConfig(context.Background(), cfg)
 
 	if err != nil {
 		return nil, err

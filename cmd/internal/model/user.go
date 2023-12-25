@@ -3,12 +3,13 @@ package model
 import (
 	"crypto/sha512"
 	"encoding/base64"
+	"github.com/google/uuid"
 )
 
 type User struct {
-	UserID   string `json:"userID,omitempty" db:"user_id"`
-	Login    string `json:"login" db:"login"`
-	Password string `json:"password" db:"password"`
+	UserID   uuid.UUID `json:"userID,omitempty" db:"user_id"`
+	Login    string    `json:"login" db:"login"`
+	Password string    `json:"password" db:"password"`
 }
 
 func (u *User) PasswordHash() string {

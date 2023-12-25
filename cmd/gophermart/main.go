@@ -16,32 +16,35 @@ func main() {
 	cfg := zap.NewDevelopmentConfig()
 	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	logger.Logger, err = cfg.Build()
+
 	if err != nil {
 		panic(err)
 	}
 
-	//Парсим переменные и аргументы команднй строки
 	config.ParseEnvFlags()
-	// создаем Storage
+	logger.Logger.Info("Creating storage...")
 	storage.Stor, err = storage.NewPgStorage()
 	if err != nil {
 		logger.Logger.Error(err.Error())
 		panic(err)
 	}
-	// запускаем сервер
-	r := router.MainRouter()
+	logger.Logger.Info("Creating storage DONE")
+	logger.Logger.Info("Creating router...")
+	r := router.New()
 	if r == nil {
 		err = errors.New("failed to create main router")
 		logger.Logger.Error(err.Error())
 		panic(err)
 	}
-	done := make(chan bool)
-	//scheduler.Schedule(accruals.CheckAccruals, time.Second, done)
+	logger.Logger.Info("Creating storage DONE")
+	logger.Logger.Info("Start server...")
 
+	done := make(chan bool)
 	err = http.ListenAndServe(config.Options.RunAddress, r)
 	if err != nil {
 		logger.Logger.Error(err.Error())
 		panic(err)
 	}
+	logger.Logger.Info("Start server DONE")
 	done <- true
 }

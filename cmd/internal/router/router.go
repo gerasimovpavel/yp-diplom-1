@@ -11,7 +11,7 @@ import (
 
 var tokenAuth *jwtauth.JWTAuth
 
-func MainRouter() chi.Router {
+func New() chi.Router {
 	tokenAuth = jwtauth.New("HS512", []byte(config.HMACSecret), nil)
 
 	r := chi.NewRouter()
@@ -22,20 +22,20 @@ func MainRouter() chi.Router {
 	r.Route("/", func(r chi.Router) {
 		r.Route("/api", func(r chi.Router) {
 			r.Route("/user", func(r chi.Router) {
-				r.Post("/register", handlers.PostUserAuth)
-				r.Post("/login", handlers.PostUserAuth)
+				r.Post("/register", handlers.Register)
+				r.Post("/login", handlers.Login)
 				r.Group(func(r chi.Router) {
 					r.Use(jwtauth.Verifier(tokenAuth))
 					r.Use(jwt.Authenticator)
 					r.Route("/orders", func(r chi.Router) {
-						r.Post("/", handlers.PostOrders)
-						r.Get("/", handlers.GetOrders)
+						r.Post("/", handlers.SaveOrders)
+						r.Get("/", handlers.LoadOrders)
 					})
 					r.Route("/balance", func(r chi.Router) {
-						r.Get("/", handlers.GetBalance)
-						r.Post("/withdraw", handlers.PostWithdraw)
+						r.Get("/", handlers.LoadBalance)
+						r.Post("/withdraw", handlers.SaveWithdraw)
 					})
-					r.Get("/withdrawals", handlers.GetWithdrawals)
+					r.Get("/withdrawals", handlers.LoadWithdrawals)
 				})
 			})
 		})

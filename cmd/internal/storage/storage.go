@@ -7,6 +7,7 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gerasimovpavel/yp-diplom-1/cmd/internal/model"
 	"github.com/google/uuid"
+	"os"
 	"time"
 )
 
@@ -17,15 +18,31 @@ type PgStorage struct {
 }
 
 func NewPgStorage() (*PgStorage, error) {
+	ctx := context.Background()
 	worker, err := NewPgWorker()
 	if err != nil {
 		return nil, err
 	}
 
-	err = createTables(worker)
-
+	initDir := "./cmd/internal/sql/public/"
+	files, err := os.ReadDir(initDir)
 	if err != nil {
 		return nil, err
+	}
+	for _, f := range files {
+		file, err := os.ReadFile(initDir + f.Name())
+
+		if err != nil {
+			return nil, err
+		}
+
+		sqlText := string(file)
+
+		_, err = worker.Exec(ctx, sqlText)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &PgStorage{w: worker}, nil
@@ -45,7 +62,7 @@ func (pw *PgStorage) CreateUser(ctx context.Context, a *model.User) (*model.User
 	if err != nil {
 		return a, err
 	}
-	a.UserID = userID.String()
+	a.UserID = userID
 	return a, nil
 }
 
@@ -158,14 +175,13 @@ func (pw *PgStorage) UpdateBalance(ctx context.Context, userID uuid.UUID) error 
 			return err
 		}
 	}
-
 	_, err = pw.w.Exec(ctx,
 		`
 			INSERT INTO balance (user_id, accrual, withdraw)
 				SELECT  o.user_id,
 						coalesce(SUM(o.accrual),0.00) AS accrual,
 						0.0 AS withdraw
-				FROM  orders O 
+				FROM  orders o
 				WHERE o.user_id=$1 AND o.status = 'PROCESSED'
 				GROUP BY o.user_id
 			ON CONFLICT (user_id) DO UPDATE SET accrual = excluded.accrual	
